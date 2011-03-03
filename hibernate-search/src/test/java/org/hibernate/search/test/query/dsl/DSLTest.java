@@ -326,7 +326,7 @@ public class DSLTest extends SearchTestCase {
 
 		FullTextQuery hibQuery = fullTextSession.createFullTextQuery( query, Month.class );
 		assertEquals( 1, hibQuery.getResultSize() );
-		assertEquals( "January", ( ( Month ) hibQuery.list().get( 0 ) ).getName() );
+		assertEquals( "January", ( (Month) hibQuery.list().get( 0 ) ).getName() );
 
 		query = monthQb.
 				range()
@@ -339,7 +339,7 @@ public class DSLTest extends SearchTestCase {
 
 		hibQuery = fullTextSession.createFullTextQuery( query, Month.class );
 		assertEquals( 1, hibQuery.getResultSize() );
-		assertEquals( "January", ( ( Month ) hibQuery.list().get( 0 ) ).getName() );
+		assertEquals( "January", ( (Month) hibQuery.list().get( 0 ) ).getName() );
 
 		query = monthQb.
 				range()
@@ -350,7 +350,7 @@ public class DSLTest extends SearchTestCase {
 				.createQuery();
 		hibQuery = fullTextSession.createFullTextQuery( query, Month.class );
 		assertEquals( 1, hibQuery.getResultSize() );
-		assertEquals( "February", ( ( Month ) hibQuery.list().get( 0 ) ).getName() );
+		assertEquals( "February", ( (Month) hibQuery.list().get( 0 ) ).getName() );
 
 		query = monthQb.
 				range()
@@ -362,7 +362,7 @@ public class DSLTest extends SearchTestCase {
 				.createQuery();
 		hibQuery = fullTextSession.createFullTextQuery( query, Month.class );
 		assertEquals( 1, hibQuery.getResultSize() );
-		assertEquals( "February", ( ( Month ) hibQuery.list().get( 0 ) ).getName() );
+		assertEquals( "February", ( (Month) hibQuery.list().get( 0 ) ).getName() );
 
 		transaction.commit();
 	}
@@ -431,16 +431,16 @@ public class DSLTest extends SearchTestCase {
 
 		Query query = monthQb.range()
 				.onField( "raindropInMm" )
-				.from(0.23d)
-				.to(0.24d)
+				.from( 0.23d )
+				.to( 0.24d )
 				.createQuery();
 
-		assertTrue(query.getClass().isAssignableFrom(NumericRangeQuery.class));
+		assertTrue( query.getClass().isAssignableFrom( NumericRangeQuery.class ) );
 
-		List results = fullTextSession.createFullTextQuery(query, Month.class).list();
+		List results = fullTextSession.createFullTextQuery( query, Month.class ).list();
 
-		assertEquals("test range numeric ", 1, results.size());
-		assertEquals("test range numeric ", "January", ((Month)results.get(0)).getName());
+		assertEquals( "test range numeric ", 1, results.size() );
+		assertEquals( "test range numeric ", "January", ( (Month) results.get( 0 ) ).getName() );
 
 
 		transaction.commit();
@@ -454,10 +454,10 @@ public class DSLTest extends SearchTestCase {
 
 		Query query = monthQb.keyword()
 				.onField( "raindropInMm" )
-				.matching(0.231d)
+				.matching( 0.231d )
 				.createQuery();
 
-		assertTrue(query.getClass().isAssignableFrom(NumericRangeQuery.class));
+		assertTrue( query.getClass().isAssignableFrom( NumericRangeQuery.class ) );
 
 		assertEquals(
 				"test term numeric ", 1, fullTextSession.createFullTextQuery( query, Month.class ).getResultSize()
@@ -465,15 +465,15 @@ public class DSLTest extends SearchTestCase {
 
 		transaction.commit();
 	}
-	
+
 	public void testFieldBridge() {
 		Transaction transaction = fullTextSession.beginTransaction();
 		final QueryBuilder monthQb = fullTextSession.getSearchFactory()
 				.buildQueryBuilder().forEntity( Month.class ).get();
 		Query query = monthQb.keyword()
-			.onField( "monthRomanNumber" )
-			.matching( 2 )
-			.createQuery();
+				.onField( "monthRomanNumber" )
+				.matching( 2 )
+				.createQuery();
 		FullTextQuery fullTextQuery = fullTextSession.createFullTextQuery( query, Month.class );
 		List results = fullTextQuery.list();
 		assertEquals( 1, results.size() );
@@ -481,6 +481,11 @@ public class DSLTest extends SearchTestCase {
 		assertEquals( 2, february.getMonthValue() );
 		transaction.commit();
 	}
+
+	public void testPolymorphism() {
+		QueryBuilder qb = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(Box.class).get();
+	}
+
 
 //	public void testTermQueryOnAnalyzer() throws Exception {
 //		FullTextSession fullTextSession = indexTestData();
@@ -640,7 +645,9 @@ public class DSLTest extends SearchTestCase {
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
 		return new Class<?>[] {
-				Month.class
+				Month.class,
+				Box.class,
+				Present.class
 		};
 	}
 
