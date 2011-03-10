@@ -24,32 +24,22 @@
 
 package org.hibernate.search.query.dsl.impl;
 
-import org.hibernate.search.query.dsl.FacetParameterContext;
-import org.hibernate.search.query.facet.FacetRequest;
-import org.hibernate.search.query.facet.FacetSortOrder;
+import org.hibernate.search.query.dsl.FacetRangeStartContext;
+import org.hibernate.search.query.dsl.FacetRangeLimitContext;
 
 /**
  * @author Hardy Ferentschik
  */
-public class ConnectedParameterContext implements FacetParameterContext {
+public class ConnectedFacetRangeStartContext<N extends Number> implements FacetRangeStartContext<N> {
 	private final FacetBuildingContext context;
 
-	public ConnectedParameterContext(FacetBuildingContext context) {
+	public ConnectedFacetRangeStartContext(FacetBuildingContext context) {
 		this.context = context;
 	}
 
-	public FacetParameterContext orderedBy(FacetSortOrder sort) {
-		context.setSort( sort );
-		return this;
-	}
-
-	public FacetParameterContext includeZeroCounts(boolean zeroCounts) {
-		context.setIncludeZeroCount( zeroCounts );
-		return this;
-	}
-
-	public FacetRequest createFacet() {
-		return context.getFacetRequest();
+	public FacetRangeLimitContext<N> from(N rangeStart) {
+		context.setRangeStart( rangeStart );
+		return new ConnectedFacetRangeLimitContext<N>(context);
 	}
 }
 

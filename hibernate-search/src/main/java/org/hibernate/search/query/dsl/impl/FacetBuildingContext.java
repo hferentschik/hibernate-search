@@ -24,18 +24,28 @@
 
 package org.hibernate.search.query.dsl.impl;
 
+import java.util.List;
+
+import org.hibernate.search.query.facet.FacetRange;
 import org.hibernate.search.query.facet.FacetRequest;
 import org.hibernate.search.query.facet.FacetSortOrder;
+
+import static org.hibernate.search.util.CollectionHelper.newArrayList;
 
 /**
  * @author Hardy Ferentschik
  */
-class FacetBuildingContext {
+class FacetBuildingContext<N extends Number> {
 	private String name;
 	private String fieldName;
 	private FacetSortOrder sort = FacetSortOrder.COUNT_DESC;
 	private boolean includeZeroCount = true;
 	private boolean isRangeQuery = false;
+	private List<FacetRange<N>> rangeList = newArrayList();
+	private N rangeStart;
+	private boolean includeRangeStart = true;
+	private N rangeEnd;
+	private boolean includeRangeEnd = true;
 
 	void setName(String name) {
 		this.name = name;
@@ -53,10 +63,39 @@ class FacetBuildingContext {
 		this.includeZeroCount = includeZeroCount;
 	}
 
+	public void setRangeQuery(boolean rangeQuery) {
+		isRangeQuery = rangeQuery;
+	}
+
+	public void setRangeStart(N rangeStart) {
+		this.rangeStart = rangeStart;
+	}
+
+	public void setIncludeRangeStart(boolean includeRangeStart) {
+		this.includeRangeStart = includeRangeStart;
+	}
+
+	public void setRangeEnd(N rangeEnd) {
+		this.rangeEnd = rangeEnd;
+	}
+
+	public void setIncludeRangeEnd(boolean includeRangeEnd) {
+		this.includeRangeEnd = includeRangeEnd;
+	}
+
+	public void makeRange() {
+		FacetRange<N> facetRange = new FacetRange<N>( rangeStart, rangeEnd, includeRangeStart, includeRangeEnd );
+		rangeList.add( facetRange );
+		rangeStart = null;
+		rangeEnd = null;
+		includeRangeStart = true;
+		includeRangeEnd = true;
+	}
+
 	FacetRequest getFacetRequest() {
-		FacetRequest request = null;
+		FacetRequest request;
 		if ( isRangeQuery ) {
-			// request = ...
+			request = new RangeFacetRequest<N>( name, fieldName, rangeList );
 		}
 		else {
 			request = new DiscreteFacetRequest( name, fieldName );
@@ -64,6 +103,24 @@ class FacetBuildingContext {
 		request.setSort( sort );
 		request.setIncludeZeroCounts( includeZeroCount );
 		return request;
+	}
+
+	@Override
+	public String toString() {
+		final StringBuffer sb = new StringBuffer();
+		sb.append( "FacetBuildingContext" );
+		sb.append( "{name='" ).append( name ).append( '\'' );
+		sb.append( ", fieldName='" ).append( fieldName ).append( '\'' );
+		sb.append( ", sort=" ).append( sort );
+		sb.append( ", includeZeroCount=" ).append( includeZeroCount );
+		sb.append( ", isRangeQuery=" ).append( isRangeQuery );
+		sb.append( ", rangeList=" ).append( rangeList );
+		sb.append( ", rangeStart=" ).append( rangeStart );
+		sb.append( ", includeRangeStart=" ).append( includeRangeStart );
+		sb.append( ", rangeEnd=" ).append( rangeEnd );
+		sb.append( ", includeRangeEnd=" ).append( includeRangeEnd );
+		sb.append( '}' );
+		return sb.toString();
 	}
 }
 

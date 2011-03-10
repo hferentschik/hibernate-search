@@ -24,7 +24,6 @@
 
 package org.hibernate.search.test.query.facet;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -36,14 +35,11 @@ import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.hibernate.search.query.dsl.QueryBuilder;
-import org.hibernate.search.query.dsl.impl.RangeFacetRequest;
 import org.hibernate.search.query.facet.Facet;
-import org.hibernate.search.query.facet.FacetRange;
 import org.hibernate.search.query.facet.FacetRequest;
 import org.hibernate.search.query.facet.FacetResult;
 import org.hibernate.search.query.facet.FacetSortOrder;
 import org.hibernate.search.test.SearchTestCase;
-import org.hibernate.testing.junit.FailureExpected;
 
 
 /**
@@ -83,6 +79,7 @@ public class RangeFacetingTest extends SearchTestCase {
 	private Transaction tx;
 
 	private String indexFieldName = "price";
+	final String priceRange = "priceRange";
 
 	public void setUp() throws Exception {
 		super.setUp();
@@ -98,30 +95,15 @@ public class RangeFacetingTest extends SearchTestCase {
 		super.tearDown();
 	}
 
-	@FailureExpected( jiraKey = "HSEARCH-667")
-	public void testFacetDSL() {
-		QueryBuilder builder = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity( Cd.class ).get();
-		FacetRequest request = builder.facet()
-				.name( "priceRange" )
+	public void testRangeQueryForInteger() {
+		FacetRequest rangeRequest = getQueryBuilder( Cd.class ).facet()
+				.name( priceRange )
 				.onField( indexFieldName )
 				.range()
-				.from( 0 )
-				.to( 1000 )
-				.from( 1001 )
-				.to( 1500 )
-				.from( 1501 )
-				.to( 3000 ).excludeLimit()
+				.from( 0 ).to( 1000 )
+				.from( 1001 ).to( 1500 )
+				.from( 1501 ).to( 3000 )
 				.createFacet();
-	}
-
-	public void testRangeQueryForInteger() {
-		final String priceRange = "priceRange";
-		final List<FacetRange<Integer>> ranges = new ArrayList<FacetRange<Integer>>();
-		ranges.add( new FacetRange<Integer>( 0, 1000 ) );
-		ranges.add( new FacetRange<Integer>( 1001, 1500 ) );
-		ranges.add( new FacetRange<Integer>( 1501, 3000 ) );
-		RangeFacetRequest<Integer> rangeRequest = new RangeFacetRequest<Integer>( priceRange, indexFieldName, ranges );
-
 		FullTextQuery query = createMatchAllQuery( Cd.class );
 		query.enableFacet( rangeRequest );
 
@@ -135,14 +117,15 @@ public class RangeFacetingTest extends SearchTestCase {
 	}
 
 	public void testRangeQueryForDoubleWithZeroCount() {
-		final String priceRange = "priceRange";
-		final List<FacetRange<Double>> ranges = new ArrayList<FacetRange<Double>>();
-		ranges.add( new FacetRange<Double>( 0.0, 1.00 ) );
-		ranges.add( new FacetRange<Double>( 1.01, 1.50 ) );
-		ranges.add( new FacetRange<Double>( 1.51, 3.00 ) );
-		ranges.add( new FacetRange<Double>( 4.00, 5.00 ) );
-		RangeFacetRequest<Double> rangeRequest = new RangeFacetRequest<Double>( priceRange, indexFieldName, ranges );
-
+		FacetRequest rangeRequest = getQueryBuilder( Fruit.class ).facet()
+				.name( priceRange )
+				.onField( indexFieldName )
+				.range()
+				.from( 0.00 ).to( 1.00 )
+				.from( 1.01 ).to( 1.50 )
+				.from( 1.51 ).to( 3.00 )
+				.from( 4.00 ).to( 5.00 )
+				.createFacet();
 		FullTextQuery query = createMatchAllQuery( Fruit.class );
 		query.enableFacet( rangeRequest );
 
@@ -156,13 +139,15 @@ public class RangeFacetingTest extends SearchTestCase {
 	}
 
 	public void testRangeQueryForDoubleWithoutZeroCount() {
-		final String priceRange = "priceRange";
-		final List<FacetRange<Double>> ranges = new ArrayList<FacetRange<Double>>();
-		ranges.add( new FacetRange<Double>( 0.0, 1.00 ) );
-		ranges.add( new FacetRange<Double>( 1.01, 1.50 ) );
-		ranges.add( new FacetRange<Double>( 1.51, 3.00 ) );
-		ranges.add( new FacetRange<Double>( 4.00, 5.00 ) );
-		RangeFacetRequest<Double> rangeRequest = new RangeFacetRequest<Double>( priceRange, indexFieldName, ranges );
+		FacetRequest rangeRequest = getQueryBuilder( Fruit.class ).facet()
+				.name( priceRange )
+				.onField( indexFieldName )
+				.range()
+				.from( 0.00 ).to( 1.00 )
+				.from( 1.01 ).to( 1.50 )
+				.from( 1.51 ).to( 3.00 )
+				.from( 4.00 ).to( 5.00 )
+				.createFacet();
 		rangeRequest.setSort( FacetSortOrder.COUNT_ASC );
 		rangeRequest.setIncludeZeroCounts( false );
 
@@ -182,8 +167,12 @@ public class RangeFacetingTest extends SearchTestCase {
 		assertTrue( facets.get( 2 ).getCount() == 5 );
 	}
 
+	private QueryBuilder getQueryBuilder(Class<?> clazz) {
+		return fullTextSession.getSearchFactory().buildQueryBuilder().forEntity( clazz ).get();
+	}
+
 	private FullTextQuery createMatchAllQuery(Class<?> clazz) {
-		QueryBuilder builder = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity( clazz ).get();
+		QueryBuilder builder = getQueryBuilder( clazz );
 		Query luceneQuery = builder.all().createQuery();
 		return fullTextSession.createFullTextQuery( luceneQuery, clazz );
 	}

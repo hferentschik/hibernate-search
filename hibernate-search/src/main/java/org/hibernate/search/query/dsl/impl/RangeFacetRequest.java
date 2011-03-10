@@ -36,7 +36,7 @@ import org.hibernate.search.query.facet.FacetRequest;
 public class RangeFacetRequest<N extends Number> extends FacetRequest {
 	private final List<FacetRange<N>> facetRangeList;
 
-	public RangeFacetRequest(String name, String fieldName, List<FacetRange<N>> facetRanges) {
+	RangeFacetRequest(String name, String fieldName, List<FacetRange<N>> facetRanges) {
 		super( name, fieldName );
 		if ( facetRanges == null || facetRanges.isEmpty() ) {
 			throw new IllegalArgumentException( "At least one facet range must be specified" );

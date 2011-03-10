@@ -22,24 +22,11 @@
  * Boston, MA  02110-1301  USA
  */
 
-package org.hibernate.search.query.dsl.impl;
-
-import org.hibernate.search.query.dsl.FacetRangeContext;
-import org.hibernate.search.query.dsl.FacetRangeLimitContext;
+package org.hibernate.search.query.dsl;
 
 /**
  * @author Hardy Ferentschik
  */
-public class ConnectedFacetRangeContext<N extends Number> implements FacetRangeContext<N> {
-	private final FacetBuildingContext context;
-
-	public ConnectedFacetRangeContext(FacetBuildingContext context) {
-		this.context = context;
-	}
-
-	public FacetRangeLimitContext<N> from(N rangeStart) {
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
-	}
+public interface FacetRangeStartContext<N extends Number> {
+	FacetRangeLimitContext<N> from(N rangeStart);
 }
-
-
