@@ -24,6 +24,7 @@
 
 package org.hibernate.search.query.dsl.impl;
 
+import org.hibernate.search.query.dsl.DiscreteFacetContext;
 import org.hibernate.search.query.dsl.FacetContinuationContext;
 import org.hibernate.search.query.dsl.FacetParameterContext;
 import org.hibernate.search.query.dsl.FacetRangeStartContext;
@@ -40,23 +41,13 @@ public class ConnectedFacetContinuationContext implements FacetContinuationConte
 		this.context = context;
 	}
 
-	public <N extends Number> FacetRangeStartContext<N> range() {
+	public <T> FacetRangeStartContext<T> range() {
 		context.setRangeQuery( true );
-		return new ConnectedFacetRangeStartContext<N>(context);
+		return new ConnectedFacetRangeStartContext<T>(context);
 	}
 
-	public FacetParameterContext orderedBy(FacetSortOrder sort) {
-		context.setSort( sort );
-		return new ConnectedFacetParameterContext(context);
-	}
-
-	public FacetParameterContext includeZeroCounts(boolean zeroCounts) {
-		context.setIncludeZeroCount( zeroCounts );
-		return new ConnectedFacetParameterContext(context);
-	}
-
-	public FacetRequest createFacet() {
-		return context.getFacetRequest();
+	public DiscreteFacetContext discrete() {
+		return new ConnectedDiscreteFacetContext(context);
 	}
 }
 

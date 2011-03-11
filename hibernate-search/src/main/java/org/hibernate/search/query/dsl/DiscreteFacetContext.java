@@ -21,13 +21,12 @@
  * 51 Franklin Street, Fifth Floor
  * Boston, MA  02110-1301  USA
  */
-
 package org.hibernate.search.query.dsl;
 
 /**
  * @author Hardy Ferentschik
  */
-public interface FacetRangeLimitContext<T> {
-	FacetRangeLimitContext<T> excludeLimit();
-	FacetRangeEndContext<T> to(T upperLimit);
+public interface DiscreteFacetContext extends FacetParameterContext {
 }
+
+

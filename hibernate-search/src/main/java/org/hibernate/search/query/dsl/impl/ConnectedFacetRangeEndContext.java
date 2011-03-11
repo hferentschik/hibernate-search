@@ -7,22 +7,22 @@ import org.hibernate.search.query.facet.FacetRequest;
 /**
  * @author Hardy Ferentschik
  */
-public class ConnectedFacetRangeEndContext<N extends Number> implements FacetRangeEndContext<N> {
+public class ConnectedFacetRangeEndContext<T> implements FacetRangeEndContext<T> {
 	private final FacetBuildingContext context;
 
 	public ConnectedFacetRangeEndContext(FacetBuildingContext context) {
 		this.context = context;
 	}
 
-	public FacetRangeEndContext<N> excludeLimit() {
+	public FacetRangeEndContext<T> excludeLimit() {
 		context.setIncludeRangeEnd( false );
 		return this;
 	}
 
-	public FacetRangeLimitContext<N> from(N rangeStart) {
+	public FacetRangeLimitContext<T> from(T rangeStart) {
 		context.makeRange();
 		context.setRangeStart( rangeStart );
-		return new ConnectedFacetRangeLimitContext<N>( context );
+		return new ConnectedFacetRangeLimitContext<T>( context );
 	}
 
 	public FacetRequest createFacet() {

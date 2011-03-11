@@ -27,76 +27,23 @@ package org.hibernate.search.test.query.facet;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.lucene.search.Query;
-
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.search.FullTextQuery;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
-import org.hibernate.search.query.dsl.QueryBuilder;
 import org.hibernate.search.query.facet.Facet;
 import org.hibernate.search.query.facet.FacetRequest;
 import org.hibernate.search.query.facet.FacetResult;
 import org.hibernate.search.query.facet.FacetSortOrder;
-import org.hibernate.search.test.SearchTestCase;
-
 
 /**
  * @author Hardy Ferentschik
  */
-public class RangeFacetingTest extends SearchTestCase {
-
-	private static final String[] albums = {
-			"A boy named Johnny",
-			"A boy named Sue",
-			"A thing called love",
-			"Adventures od Johnny Cash",
-			"American Outlaw",
-			"At Folsom Prison",
-			"Any old wind that blows",
-			"Unearthed",
-			"The man comes around",
-			"The man in black"
-	};
-	private static final int[] albumPrices = { 499, 999, 1500, 1500, 1500, 1600, 1700, 1800, 2000, 2500 };
-
-	private static final String[] fruits = {
-			"apple",
-			"pear",
-			"banana",
-			"kiwi",
-			"orange",
-			"papaya",
-			"grape",
-			"mango",
-			"mandarin",
-			"pineapple"
-	};
-	private static final double[] fruitPrices = { 0.50, 0.99, 1.50, 1.50, 1.50, 1.60, 1.70, 1.80, 2.00, 2.50 };
-
-	private FullTextSession fullTextSession;
-	private Transaction tx;
-
-	private String indexFieldName = "price";
-	final String priceRange = "priceRange";
-
-	public void setUp() throws Exception {
-		super.setUp();
-		fullTextSession = Search.getFullTextSession( openSession() );
-		loadTestData( fullTextSession );
-		tx = fullTextSession.beginTransaction();
-	}
-
-	public void tearDown() throws Exception {
-		tx.commit();
-		fullTextSession.clear();
-		fullTextSession.close();
-		super.tearDown();
-	}
+public class RangeFacetingTest extends AbstractFacetTest {
+	private final String indexFieldName = "price";
+	private final String priceRange = "priceRange";
 
 	public void testRangeQueryForInteger() {
-		FacetRequest rangeRequest = getQueryBuilder( Cd.class ).facet()
+		FacetRequest rangeRequest = queryBuilder( Cd.class ).facet()
 				.name( priceRange )
 				.onField( indexFieldName )
 				.range()
@@ -110,14 +57,11 @@ public class RangeFacetingTest extends SearchTestCase {
 		Map<String, FacetResult> results = query.getFacetResults();
 		assertTrue( "We should have three facet result", results.size() == 1 );
 		List<Facet> facets = results.get( priceRange ).getFacets();
-		assertEquals( "There should be three price ranges", 3, facets.size() );
-		assertTrue( facets.get( 0 ).getCount() == 5 );
-		assertTrue( facets.get( 1 ).getCount() == 3 );
-		assertTrue( facets.get( 2 ).getCount() == 2 );
+		assertFacetCounts( facets, new int[] { 5, 3, 2 } );
 	}
 
 	public void testRangeQueryForDoubleWithZeroCount() {
-		FacetRequest rangeRequest = getQueryBuilder( Fruit.class ).facet()
+		FacetRequest rangeRequest = queryBuilder( Fruit.class ).facet()
 				.name( priceRange )
 				.onField( indexFieldName )
 				.range()
@@ -131,15 +75,11 @@ public class RangeFacetingTest extends SearchTestCase {
 
 		Map<String, FacetResult> results = query.getFacetResults();
 		List<Facet> facets = results.get( priceRange ).getFacets();
-		assertEquals( "There should be three price ranges", 4, facets.size() );
-		assertTrue( facets.get( 0 ).getCount() == 5 );
-		assertTrue( facets.get( 1 ).getCount() == 3 );
-		assertTrue( facets.get( 2 ).getCount() == 2 );
-		assertTrue( facets.get( 3 ).getCount() == 0 );
+		assertFacetCounts( facets, new int[] { 5, 3, 2, 0 } );
 	}
 
 	public void testRangeQueryForDoubleWithoutZeroCount() {
-		FacetRequest rangeRequest = getQueryBuilder( Fruit.class ).facet()
+		FacetRequest rangeRequest = queryBuilder( Fruit.class ).facet()
 				.name( priceRange )
 				.onField( indexFieldName )
 				.range()
@@ -156,28 +96,13 @@ public class RangeFacetingTest extends SearchTestCase {
 
 		Map<String, FacetResult> results = query.getFacetResults();
 		List<Facet> facets = results.get( priceRange ).getFacets();
-		assertEquals( "There should be three price ranges", 3, facets.size() );
+		assertFacetCounts( facets, new int[] { 2, 3, 5 } );
 		assertEquals( "[0.0, 1.0]", facets.get( 0 ).getValue() );
-		assertTrue( facets.get( 0 ).getCount() == 2 );
-
 		assertEquals( "[1.01, 1.5]", facets.get( 1 ).getValue() );
-		assertTrue( facets.get( 1 ).getCount() == 3 );
-
 		assertEquals( "[1.51, 3.0]", facets.get( 2 ).getValue() );
-		assertTrue( facets.get( 2 ).getCount() == 5 );
 	}
 
-	private QueryBuilder getQueryBuilder(Class<?> clazz) {
-		return fullTextSession.getSearchFactory().buildQueryBuilder().forEntity( clazz ).get();
-	}
-
-	private FullTextQuery createMatchAllQuery(Class<?> clazz) {
-		QueryBuilder builder = getQueryBuilder( clazz );
-		Query luceneQuery = builder.all().createQuery();
-		return fullTextSession.createFullTextQuery( luceneQuery, clazz );
-	}
-
-	private void loadTestData(Session session) {
+	public void loadTestData(Session session) {
 		Transaction tx = session.beginTransaction();
 		for ( int i = 0; i < albums.length; i++ ) {
 			Cd cd = new Cd( albums[i], albumPrices[i] );

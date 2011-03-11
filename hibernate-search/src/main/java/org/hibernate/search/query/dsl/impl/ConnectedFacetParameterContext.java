@@ -48,6 +48,11 @@ public class ConnectedFacetParameterContext implements FacetParameterContext {
 		return this;
 	}
 
+	public FacetParameterContext maxFacetCount(int maxFacetCount) {
+		context.setMaxFacetCount( maxFacetCount );
+		return this;
+	}
+
 	public FacetRequest createFacet() {
 		return context.getFacetRequest();
 	}

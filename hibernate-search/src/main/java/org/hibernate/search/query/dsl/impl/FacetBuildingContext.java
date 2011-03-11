@@ -35,17 +35,18 @@ import static org.hibernate.search.util.CollectionHelper.newArrayList;
 /**
  * @author Hardy Ferentschik
  */
-class FacetBuildingContext<N extends Number> {
+class FacetBuildingContext<T> {
 	private String name;
 	private String fieldName;
 	private FacetSortOrder sort = FacetSortOrder.COUNT_DESC;
 	private boolean includeZeroCount = true;
 	private boolean isRangeQuery = false;
-	private List<FacetRange<N>> rangeList = newArrayList();
-	private N rangeStart;
+	private List<FacetRange<T>> rangeList = newArrayList();
+	private T rangeStart;
 	private boolean includeRangeStart = true;
-	private N rangeEnd;
+	private T rangeEnd;
 	private boolean includeRangeEnd = true;
+	private int maxFacetCount = -1;
 
 	void setName(String name) {
 		this.name = name;
@@ -67,7 +68,7 @@ class FacetBuildingContext<N extends Number> {
 		isRangeQuery = rangeQuery;
 	}
 
-	public void setRangeStart(N rangeStart) {
+	public void setRangeStart(T rangeStart) {
 		this.rangeStart = rangeStart;
 	}
 
@@ -75,7 +76,7 @@ class FacetBuildingContext<N extends Number> {
 		this.includeRangeStart = includeRangeStart;
 	}
 
-	public void setRangeEnd(N rangeEnd) {
+	public void setRangeEnd(T rangeEnd) {
 		this.rangeEnd = rangeEnd;
 	}
 
@@ -83,8 +84,12 @@ class FacetBuildingContext<N extends Number> {
 		this.includeRangeEnd = includeRangeEnd;
 	}
 
+	public void setMaxFacetCount(int maxFacetCount) {
+		this.maxFacetCount = maxFacetCount;
+	}
+
 	public void makeRange() {
-		FacetRange<N> facetRange = new FacetRange<N>( rangeStart, rangeEnd, includeRangeStart, includeRangeEnd );
+		FacetRange<T> facetRange = new FacetRange<T>( rangeStart, rangeEnd, includeRangeStart, includeRangeEnd );
 		rangeList.add( facetRange );
 		rangeStart = null;
 		rangeEnd = null;
@@ -95,13 +100,14 @@ class FacetBuildingContext<N extends Number> {
 	FacetRequest getFacetRequest() {
 		FacetRequest request;
 		if ( isRangeQuery ) {
-			request = new RangeFacetRequest<N>( name, fieldName, rangeList );
+			request = new RangeFacetRequest<T>( name, fieldName, rangeList );
 		}
 		else {
 			request = new DiscreteFacetRequest( name, fieldName );
 		}
 		request.setSort( sort );
 		request.setIncludeZeroCounts( includeZeroCount );
+		request.setMaxNumberOfFacets( maxFacetCount );
 		return request;
 	}
 
