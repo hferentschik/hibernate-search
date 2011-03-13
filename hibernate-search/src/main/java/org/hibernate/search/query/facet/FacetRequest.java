@@ -105,7 +105,7 @@ public abstract class FacetRequest {
 
 	@Override
 	public String toString() {
-		final StringBuffer sb = new StringBuffer();
+		final StringBuilder sb = new StringBuilder();
 		sb.append( "FacetRequest" );
 		sb.append( "{name='" ).append( name ).append( '\'' );
 		sb.append( ", fieldName='" ).append( fieldName ).append( '\'' );
