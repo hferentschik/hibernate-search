@@ -26,14 +26,14 @@ package org.hibernate.search.test.id;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 
-import org.hibernate.search.bridge.LuceneOptions;
+import org.hibernate.search.bridge.AbstractFieldBridge;
 import org.hibernate.search.bridge.TwoWayFieldBridge;
 
 /**
  * @author Emmanuel Bernard
  */
-public class PersonPKBridge implements TwoWayFieldBridge {
-
+public class PersonPKBridge extends AbstractFieldBridge implements TwoWayFieldBridge {
+	@Override
 	public Object get(String name, Document document) {
 		PersonPK id = new PersonPK();
 		Field field = document.getField( name + ".firstName" );
@@ -43,24 +43,24 @@ public class PersonPKBridge implements TwoWayFieldBridge {
 		return id;
 	}
 
+	@Override
 	public String objectToString(Object object) {
-		PersonPK id = ( PersonPK ) object;
+		PersonPK id = (PersonPK) object;
 		StringBuilder sb = new StringBuilder();
 		sb.append( id.getFirstName() ).append( " " ).append( id.getLastName() );
 		return sb.toString();
 	}
 
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
-		PersonPK id = ( PersonPK ) value;
+	@Override
+	public void set(Object value, Document document) {
+		PersonPK id = (PersonPK) value;
 
 		//store each property in a unique field
-		luceneOptions.addFieldToDocument( name + ".firstName", id.getFirstName(), document );
+		getLuceneOptions().addFieldToDocument( getFieldName() + ".firstName", id.getFirstName(), document );
 
-		luceneOptions.addFieldToDocument( name + ".lastName", id.getLastName(), document );
-		
+		getLuceneOptions().addFieldToDocument( getFieldName() + ".lastName", id.getLastName(), document );
+
 		//store the unique string representation in the named field
-		luceneOptions.addFieldToDocument( name, objectToString( id ), document );
-
+		getLuceneOptions().addFieldToDocument( getFieldName(), objectToString( id ), document );
 	}
-	
 }

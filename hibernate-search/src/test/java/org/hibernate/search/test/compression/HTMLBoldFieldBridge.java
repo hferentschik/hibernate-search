@@ -27,10 +27,10 @@ import java.util.zip.DataFormatException;
 
 import org.apache.lucene.document.CompressionTools;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Fieldable;
 
 import org.hibernate.search.SearchException;
-import org.hibernate.search.bridge.FieldBridge;
+import org.hibernate.search.bridge.AbstractFieldBridge;
 import org.hibernate.search.bridge.LuceneOptions;
 import org.hibernate.search.bridge.TwoWayFieldBridge;
 
@@ -40,33 +40,35 @@ import org.hibernate.search.bridge.TwoWayFieldBridge;
  * @author Sanne Grinovero
  * @see LuceneOptions
  */
-public class HTMLBoldFieldBridge implements FieldBridge, TwoWayFieldBridge {
-
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
+public class HTMLBoldFieldBridge extends AbstractFieldBridge implements TwoWayFieldBridge {
+	@Override
+	public void set(Object value, Document document) {
 		String fieldValue = objectToString( value );
-		luceneOptions.addFieldToDocument( name, fieldValue, document );
+		getLuceneOptions().addFieldToDocument( getFieldName(), fieldValue, document );
 	}
 
+	@Override
 	public Object get(String name, Document document) {
-		Field field = document.getField( name );
-			String stringValue;
-			if ( field.isBinary() ) {
-				try {
-					stringValue = CompressionTools.decompressString( field.getBinaryValue() );
-				}
-				catch ( DataFormatException e) {
-					throw new SearchException( "Field " + name + " looks like binary but couldn't be decompressed" );
-				}
+		Fieldable fieldable = document.getFieldable( name );
+		String stringValue;
+		if ( fieldable.isBinary() ) {
+			try {
+				stringValue = CompressionTools.decompressString( fieldable.getBinaryValue() );
 			}
-			else {
-				stringValue = field.stringValue();
+			catch ( DataFormatException e ) {
+				throw new SearchException( "Field " + name + " looks like binary but couldn't be decompressed" );
 			}
-			return stringValue.substring( 3, stringValue.length() - 4 );
+		}
+		else {
+			stringValue = fieldable.stringValue();
+		}
+		return stringValue.substring( 3, stringValue.length() - 4 );
 	}
 
+	@Override
 	public String objectToString(Object value) {
 		String originalValue = value.toString();
-		return  "<b>" + originalValue + "</b>";
+		return "<b>" + originalValue + "</b>";
 	}
 }
 

@@ -26,7 +26,6 @@ import org.hibernate.search.bridge.builtin.ArrayBridge;
  * @author Davide D'Alto
  */
 public class BuiltinArrayBridge extends ArrayBridge implements StringBridge {
-
 	private static final String2FieldBridgeAdaptor DEFAULT_STRING_BRIDGE = new String2FieldBridgeAdaptor( new DefaultStringBridge() );
 
 	private final StringBridge bridge;
@@ -45,14 +44,8 @@ public class BuiltinArrayBridge extends ArrayBridge implements StringBridge {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.hibernate.search.bridge.StringBridge#objectToString(java.lang.Object)
-	 */
 	@Override
 	public String objectToString(Object object) {
 		return bridge.objectToString( object );
 	}
-
 }

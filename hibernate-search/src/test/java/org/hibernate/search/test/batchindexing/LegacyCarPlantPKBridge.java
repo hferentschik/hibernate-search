@@ -22,26 +22,30 @@ package org.hibernate.search.test.batchindexing;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.hibernate.search.bridge.LuceneOptions;
+import org.apache.lucene.document.Fieldable;
+
+import org.hibernate.search.bridge.AbstractFieldBridge;
 import org.hibernate.search.bridge.TwoWayFieldBridge;
 
 /**
  * @author Bayo Erinle
  */
-public class LegacyCarPlantPKBridge implements TwoWayFieldBridge {
+public class LegacyCarPlantPKBridge extends AbstractFieldBridge implements TwoWayFieldBridge {
 	private static final String PLANT_ID = ".plantId";
 	private static final String CAR_ID = ".carId";
 
+	@Override
 	public Object get(String name, Document document) {
 		LegacyCarPlantPK id = new LegacyCarPlantPK();
-		Field field = document.getField( name + PLANT_ID );
-		id.setPlantId( field.stringValue() );
+		Fieldable fieldable = document.getFieldable( name + PLANT_ID );
+		id.setPlantId( fieldable.stringValue() );
 
-		field = document.getField( name + CAR_ID );
-		id.setCarId( field.stringValue() );
+		fieldable = document.getFieldable( name + CAR_ID );
+		id.setCarId( fieldable.stringValue() );
 		return id;
 	}
 
+	@Override
 	public String objectToString(Object o) {
 		LegacyCarPlantPK id = (LegacyCarPlantPK) o;
 		StringBuilder sb = new StringBuilder();
@@ -49,18 +53,19 @@ public class LegacyCarPlantPKBridge implements TwoWayFieldBridge {
 		return sb.toString();
 	}
 
-	public void set(String name, Object o, Document document, LuceneOptions luceneOptions) {
+	@Override
+	public void set(Object o, Document document) {
 		LegacyCarPlantPK id = (LegacyCarPlantPK) o;
-		Field.Store store = luceneOptions.getStore();
-		Field.Index index = luceneOptions.getIndex();
-		Field.TermVector termVector = luceneOptions.getTermVector();
-		Float boost = luceneOptions.getBoost();
+		Field.Store store = getLuceneOptions().getStore();
+		Field.Index index = getLuceneOptions().getIndex();
+		Field.TermVector termVector = getLuceneOptions().getTermVector();
+		Float boost = getLuceneOptions().getBoost();
 
-		Field field = new Field( name + PLANT_ID, id.getPlantId(), store, index, termVector );
+		Fieldable field = new Field( getFieldName() + PLANT_ID, id.getPlantId(), store, index, termVector );
 		field.setBoost( boost );
 		document.add( field );
 
-		field = new Field( name + CAR_ID, id.getCarId(), store, index, termVector );
+		field = new Field( getFieldName() + CAR_ID, id.getCarId(), store, index, termVector );
 		field.setBoost( boost );
 		document.add( field );
 	}

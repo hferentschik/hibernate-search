@@ -24,7 +24,6 @@ import org.hibernate.search.bridge.StringBridge;
  * @author Davide D'Alto
  */
 public class DefaultStringBridge implements StringBridge {
-
 	@Override
 	public String objectToString(Object object) {
 		if ( object == null )
@@ -32,5 +31,4 @@ public class DefaultStringBridge implements StringBridge {
 
 		return object.toString();
 	}
-
 }

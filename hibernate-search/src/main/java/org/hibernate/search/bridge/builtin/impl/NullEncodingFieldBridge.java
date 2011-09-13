@@ -16,18 +16,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
  */
-
 package org.hibernate.search.bridge.builtin.impl;
 
 import org.apache.lucene.document.Document;
-import org.hibernate.search.bridge.FieldBridge;
-import org.hibernate.search.bridge.LuceneOptions;
+
+import org.hibernate.search.bridge.AbstractFieldBridge;
 import org.hibernate.search.bridge.StringBridge;
 
 /**
  * @author Davide D'Alto
+ * @author Hardy Ferentschik
  */
-public class NullEncodingFieldBridge implements FieldBridge, StringBridge {
+public class NullEncodingFieldBridge extends AbstractFieldBridge implements StringBridge {
 
 	private final String2FieldBridgeAdaptor bridge;
 	private final String nullMarker;
@@ -37,27 +37,22 @@ public class NullEncodingFieldBridge implements FieldBridge, StringBridge {
 		this.nullMarker = nullMarker;
 	}
 
+
 	@Override
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
+	public void set(Object value, Document document) {
 		if ( value == null ) {
-			luceneOptions.addFieldToDocument( name, nullMarker, document );
+			getLuceneOptions().addFieldToDocument( getFieldName(), nullMarker, document );
 		}
 		else {
-			bridge.set( name, value, document, luceneOptions );
+			bridge.set( value, document );
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.hibernate.search.bridge.StringBridge#objectToString(java.lang.Object)
-	 */
 	@Override
 	public String objectToString(Object object) {
-		if ( object == null )
+		if ( object == null ) {
 			return nullMarker;
-
+		}
 		return bridge.objectToString( object );
 	}
-
 }

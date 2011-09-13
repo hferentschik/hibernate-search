@@ -19,6 +19,7 @@
 package org.hibernate.search.bridge.builtin;
 
 import org.apache.lucene.document.Document;
+
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.LuceneOptions;
 
@@ -28,40 +29,38 @@ import org.hibernate.search.bridge.LuceneOptions;
  * A {@code null} array is not indexed.
  *
  * @author Davide D'Alto
+ * @author Hardy Ferentschik
  */
 public class ArrayBridge implements FieldBridge {
-
 	private final FieldBridge bridge;
 
 	/**
-	 * @param bridge
-	 *            the {@link FieldBridge} used for each entry of the array
+	 * @param bridge the {@link FieldBridge} used for each entry of the array
 	 */
 	public ArrayBridge(FieldBridge bridge) {
 		this.bridge = bridge;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.hibernate.search.bridge.FieldBridge#set(java.lang.String, java.lang.Object, org.apache.lucene.document.Document, org.hibernate.search.bridge.LuceneOptions)
-	 */
 	@Override
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
+	public void initialize(String name, LuceneOptions luceneOptions) {
+		bridge.initialize( name, luceneOptions );
+	}
+
+	@Override
+	public void set(Object value, Document document) {
 		if ( value != null ) {
-			indexNotNullArray( name, value, document, luceneOptions );
+			indexNotNullArray( value, document );
 		}
 	}
 
-	void indexNotNullArray(String name, Object value, Document document, LuceneOptions luceneOptions) {
+	void indexNotNullArray(Object value, Document document) {
 		Object[] collection = (Object[]) value;
 		for ( Object entry : collection ) {
-			indexEntry( name, entry, document, luceneOptions );
+			indexEntry( entry, document );
 		}
 	}
 
-	private void indexEntry(String fieldName, Object entry, Document document, LuceneOptions luceneOptions) {
-		bridge.set( fieldName, entry, document, luceneOptions );
+	private void indexEntry(Object entry, Document document) {
+		bridge.set( entry, document );
 	}
-
 }

@@ -26,6 +26,8 @@ package org.hibernate.search.test.bridge;
 import java.util.Map;
 
 import org.apache.lucene.document.Document;
+
+import org.hibernate.search.bridge.AbstractFieldBridge;
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.LuceneOptions;
 import org.hibernate.search.bridge.ParameterizedBridge;
@@ -33,8 +35,7 @@ import org.hibernate.search.bridge.ParameterizedBridge;
 /**
  * @author John Griffin
  */
-public class CatDeptsFieldsClassBridge implements FieldBridge, ParameterizedBridge {
-
+public class CatDeptsFieldsClassBridge extends AbstractFieldBridge implements ParameterizedBridge {
 	private String sepChar;
 
 	@SuppressWarnings("unchecked")
@@ -42,7 +43,8 @@ public class CatDeptsFieldsClassBridge implements FieldBridge, ParameterizedBrid
 		this.sepChar = (String) parameters.get( "sepChar" );
 	}
 
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
+	@Override
+	public void set(Object value, Document document) {
 		// In this particular class the name of the new field was passed
 		// from the name field of the ClassBridge Annotation. This is not
 		// a requirement. It just works that way in this instance. The
@@ -57,6 +59,6 @@ public class CatDeptsFieldsClassBridge implements FieldBridge, ParameterizedBrid
 			fieldValue2 = "";
 		}
 		String indexedString = fieldValue1 + sepChar + fieldValue2;
-		luceneOptions.addFieldToDocument( name, indexedString, document );
+		getLuceneOptions().addFieldToDocument( getFieldName(), indexedString, document );
 	}
 }

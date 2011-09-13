@@ -27,15 +27,14 @@ import java.util.Map;
 
 import org.apache.lucene.document.Document;
 
-import org.hibernate.search.bridge.FieldBridge;
-import org.hibernate.search.bridge.LuceneOptions;
+import org.hibernate.search.bridge.AbstractFieldBridge;
 import org.hibernate.search.bridge.ParameterizedBridge;
 
 /**
  * @author John Griffin
  */
 @SuppressWarnings("unchecked")
-public class EquipmentType implements FieldBridge, ParameterizedBridge {
+public class EquipmentType extends AbstractFieldBridge implements ParameterizedBridge {
 
 	private Map equips;
 
@@ -44,18 +43,17 @@ public class EquipmentType implements FieldBridge, ParameterizedBridge {
 		this.equips = parameters;
 	}
 
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
+	public void set(Object value, Document document) {
 		// In this particular class the name of the new field was passed
 		// from the name field of the ClassBridge Annotation. This is not
 		// a requirement. It just works that way in this instance. The
 		// actual name could be supplied by hard coding it below.
-		Departments deps = ( Departments ) value;
-		String fieldValue = deps.getManufacturer();
+		Departments departments = (Departments) value;
+		String fieldValue = departments.getManufacturer();
 
 		if ( fieldValue != null ) {
-			String indexedString = ( String ) equips.get( fieldValue );
-			luceneOptions.addFieldToDocument( name, indexedString, document );
+			String indexedString = (String) equips.get( fieldValue );
+			getLuceneOptions().addFieldToDocument( getFieldName(), indexedString, document );
 		}
 	}
-	
 }

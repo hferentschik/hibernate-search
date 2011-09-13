@@ -21,6 +21,7 @@ package org.hibernate.search.bridge.builtin;
 import java.util.Map;
 
 import org.apache.lucene.document.Document;
+
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.LuceneOptions;
 
@@ -30,40 +31,38 @@ import org.hibernate.search.bridge.LuceneOptions;
  * A {@code null} array is not indexed.
  *
  * @author Davide D'Alto
+ * @author Hardy Ferentschik
  */
 public class MapBridge implements FieldBridge {
-
 	private final FieldBridge bridge;
 
 	/**
-	 * @param bridge
-	 *            the {@link FieldBridge} used for each entry of a {@link java.util.Map} object.
+	 * @param bridge the {@link FieldBridge} used for each entry of a {@link java.util.Map} object.
 	 */
 	public MapBridge(FieldBridge bridge) {
 		this.bridge = bridge;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.hibernate.search.bridge.FieldBridge#set(java.lang.String, java.lang.Object, org.apache.lucene.document.Document, org.hibernate.search.bridge.LuceneOptions)
-	 */
 	@Override
-	public void set(String fieldName, Object value, Document document, LuceneOptions luceneOptions) {
+	public void initialize(String name, LuceneOptions luceneOptions) {
+		bridge.initialize( name, luceneOptions );
+	}
+
+	@Override
+	public void set(Object value, Document document) {
 		if ( value != null ) {
-			indexNotNullMap( fieldName, value, document, luceneOptions );
+			indexNotNullMap( value, document );
 		}
 	}
 
-	protected void indexNotNullMap(String name, Object value, Document document, LuceneOptions luceneOptions) {
-		Iterable<?> collection = ((Map<?,?>) value).values();
+	protected void indexNotNullMap(Object value, Document document) {
+		Iterable<?> collection = ( (Map<?, ?>) value ).values();
 		for ( Object entry : collection ) {
-			indexEntry( name, entry, document, luceneOptions );
+			indexEntry( entry, document );
 		}
 	}
 
-	protected void indexEntry(String fieldName, Object entry, Document document, LuceneOptions luceneOptions) {
-		bridge.set( fieldName, entry, document, luceneOptions );
+	protected void indexEntry(Object entry, Document document) {
+		bridge.set( entry, document );
 	}
-
 }

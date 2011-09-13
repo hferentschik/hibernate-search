@@ -21,12 +21,11 @@
  * 51 Franklin Street, Fifth Floor
  * Boston, MA  02110-1301  USA
  */
-
 package org.hibernate.search.bridge.builtin.impl;
 
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Fieldable;
 
 import org.hibernate.search.bridge.LuceneOptions;
 import org.hibernate.search.bridge.TwoWayFieldBridge;
@@ -45,8 +44,8 @@ public class NullEncodingTwoWayFieldBridge implements TwoWayFieldBridge {
 	}
 
 	public Object get(String name, Document document) {
-		Field field = document.getField( name );
-		String stringValue = field.stringValue();
+		Fieldable fieldable = document.getFieldable( name );
+		String stringValue = fieldable.stringValue();
 		if ( nullMarker.equals( stringValue ) ) {
 			return null;
 		}
@@ -63,12 +62,18 @@ public class NullEncodingTwoWayFieldBridge implements TwoWayFieldBridge {
 			return fieldBridge.objectToString( object );
 		}
 	}
-	
+
 	public TwoWayFieldBridge unwrap() {
 		return fieldBridge;
 	}
 
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
-		fieldBridge.set( name, value, document, luceneOptions );
+	@Override
+	public void initialize(String name, LuceneOptions luceneOptions) {
+		fieldBridge.initialize( name, luceneOptions );
+	}
+
+	@Override
+	public void set(Object value, Document document) {
+		fieldBridge.set( value, document );
 	}
 }

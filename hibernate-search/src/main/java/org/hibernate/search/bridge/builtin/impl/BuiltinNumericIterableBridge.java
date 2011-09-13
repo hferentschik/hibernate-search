@@ -16,17 +16,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
  */
-
 package org.hibernate.search.bridge.builtin.impl;
 
-import org.apache.lucene.document.Document;
 import org.hibernate.search.bridge.FieldBridge;
-import org.hibernate.search.bridge.LuceneOptions;
 
 /**
  * It manages an {@link java.lang.Iterable} object annotated with {@link org.hibernate.search.annotations.NumericField}
  *
  * @author Davide D'Alto
+ * @author Hardy Ferentschik
  */
 public class BuiltinNumericIterableBridge extends BuiltinIterableBridge {
 
@@ -35,24 +33,6 @@ public class BuiltinNumericIterableBridge extends BuiltinIterableBridge {
 	}
 
 	public BuiltinNumericIterableBridge() {
-		super( new FieldBridge() {
-
-			@Override
-			public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
-				if ( value == null ) {
-					manageNull( name, document, luceneOptions );
-				}
-				else {
-					luceneOptions.addNumericFieldToDocument( name, value, document );
-				}
-			}
-
-			private void manageNull(String name, Document document, LuceneOptions luceneOptions) {
-				if ( luceneOptions.indexNullAs() != null )
-					luceneOptions.addFieldToDocument( name, luceneOptions.indexNullAs(), document );
-			}
-
-		} );
+		super( new DefaultNumericFieldBridge() );
 	}
-
 }

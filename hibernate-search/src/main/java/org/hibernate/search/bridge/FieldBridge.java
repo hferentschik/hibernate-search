@@ -26,14 +26,21 @@ package org.hibernate.search.bridge;
 import org.apache.lucene.document.Document;
 
 /**
- * Link between a java property and a Lucene Document
- * Usually a Java property will be linked to a Document Field.
+ * Link between a java property and a Lucene {@link Document}.
+ * Usually a Java property will be linked to a {@link org.apache.lucene.document.Fieldable Field(able)} in a document.
  * <p/>
  * All implementations need to be threadsafe.
  *
  * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
  */
 public interface FieldBridge {
+	/**
+	 * @param name The field to add to the Lucene document
+	 * @param luceneOptions Contains the parameters used for adding {@code value} to
+	 * the Lucene document.
+	 */
+	void initialize(String name, LuceneOptions luceneOptions);
 
 	/**
 	 * Manipulate the document to index the given value.
@@ -46,11 +53,8 @@ public interface FieldBridge {
 	 * luceneOptions.addFieldToDocument(name, fieldValue, document);
 	 * {code}
 	 *
-	 * @param name The field to add to the Lucene document
 	 * @param value The actual value to index
 	 * @param document The Lucene document into which we want to index the value.
-	 * @param luceneOptions Contains the parameters used for adding {@code value} to
-	 * the Lucene document.
 	 */
-	void set(String name, Object value, Document document, LuceneOptions luceneOptions);
+	void set(Object value, Document document);
 }

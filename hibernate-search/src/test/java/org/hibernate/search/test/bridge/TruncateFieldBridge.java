@@ -24,26 +24,25 @@
 package org.hibernate.search.test.bridge;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.hibernate.search.bridge.FieldBridge;
-import org.hibernate.search.bridge.LuceneOptions;
+import org.apache.lucene.document.Fieldable;
+
+import org.hibernate.search.bridge.AbstractFieldBridge;
 
 /**
  * @author Emmanuel Bernard
  */
-public class TruncateFieldBridge implements FieldBridge {
-	
+public class TruncateFieldBridge extends AbstractFieldBridge {
 	public Object get(String name, Document document) {
-		Field field = document.getField( name );
-		return field.stringValue();
+		Fieldable fieldable = document.getFieldable( name );
+		return fieldable.stringValue();
 	}
 
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
+	@Override
+	public void set(Object value, Document document) {
 		String stringValue = (String) value;
 		if ( stringValue != null ) {
 			String indexedString = stringValue.substring( 0, stringValue.length() / 2 );
-			luceneOptions.addFieldToDocument( name, indexedString, document );
+			getLuceneOptions().addFieldToDocument( getFieldName(), indexedString, document );
 		}
 	}
-	
 }

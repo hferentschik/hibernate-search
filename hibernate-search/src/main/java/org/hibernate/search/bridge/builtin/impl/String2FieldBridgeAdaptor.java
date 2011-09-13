@@ -25,33 +25,35 @@ package org.hibernate.search.bridge.builtin.impl;
 
 import org.apache.lucene.document.Document;
 
+import org.hibernate.search.bridge.AbstractFieldBridge;
 import org.hibernate.search.bridge.FieldBridge;
-import org.hibernate.search.bridge.LuceneOptions;
 import org.hibernate.search.bridge.StringBridge;
 
 /**
- * Bridge to use a StringBridge as a FieldBridge.
+ * Adapter to use a {@link StringBridge} as a {@link FieldBridge}.
  *
  * @author Emmanuel Bernard (C) 2011 Red Hat Inc.
  * @author Sanne Grinovero (C) 2011 Red Hat Inc.
+ * @author Hardy Ferentschik
  */
-public class String2FieldBridgeAdaptor implements FieldBridge, StringBridge {
+public class String2FieldBridgeAdaptor extends AbstractFieldBridge implements StringBridge {
 	private final StringBridge stringBridge;
 
 	public String2FieldBridgeAdaptor(StringBridge stringBridge) {
 		this.stringBridge = stringBridge;
 	}
 
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
+	@Override
+	public void set(Object value, Document document) {
 		String indexedString = stringBridge.objectToString( value );
-		if(indexedString == null && luceneOptions.indexNullAs() != null) {
-			indexedString = luceneOptions.indexNullAs();
+		if ( indexedString == null && getLuceneOptions().indexNullAs() != null ) {
+			indexedString = getLuceneOptions().indexNullAs();
 		}
-		luceneOptions.addFieldToDocument( name, indexedString, document );
+		getLuceneOptions().addFieldToDocument( getFieldName(), indexedString, document );
 	}
 
+	@Override
 	public String objectToString(Object object) {
 		return stringBridge.objectToString( object );
 	}
-
 }

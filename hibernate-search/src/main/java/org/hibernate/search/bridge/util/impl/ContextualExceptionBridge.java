@@ -24,19 +24,21 @@
 
 package org.hibernate.search.bridge.util.impl;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.lucene.document.Document;
+
 import org.hibernate.annotations.common.reflection.XMember;
 import org.hibernate.search.bridge.BridgeException;
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.LuceneOptions;
 
-import java.util.LinkedList;
-import java.util.List;
-
 /**
  * Wrap the exception with an exception provide contextual feedback
  *
  * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
  */
 public class ContextualExceptionBridge implements FieldBridge {
 	private FieldBridge delegate;
@@ -49,6 +51,21 @@ public class ContextualExceptionBridge implements FieldBridge {
 		return this;
 	}
 
+	@Override
+	public void initialize(String name, LuceneOptions luceneOptions) {
+		delegate.initialize( name, luceneOptions );
+	}
+
+	@Override
+	public void set(Object value, Document document) {
+		try {
+			delegate.set( value, document );
+		}
+		catch ( Exception e ) {
+			throw buildBridgeException( e, "set" );
+		}
+	}
+
 	public ContextualExceptionBridge setClass(Class<?> clazz) {
 		this.clazz = clazz;
 		return this;
@@ -57,34 +74,6 @@ public class ContextualExceptionBridge implements FieldBridge {
 	public ContextualExceptionBridge setFieldName(String fieldName) {
 		this.fieldName = fieldName;
 		return this;
-	}
-
-	protected BridgeException buildBridgeException(Exception e, String method) {
-		StringBuilder error = new StringBuilder( "Exception while calling bridge#" );
-		error.append( method );
-		if ( clazz != null ) {
-			error.append( "\n\tclass: " ).append( clazz.getName() );
-		}
-		if ( path.size() > 0 ) {
-			error.append( "\n\tpath: " );
-			for( XMember pathNode : path ) {
-				error.append( pathNode.getName() ).append( "." );
-			}
-			error.deleteCharAt( error.length() - 1 );
-		}
-		if ( fieldName != null ) {
-			error.append( "\n\tfield bridge: " ).append( fieldName );
-		}
-		throw new BridgeException( error.toString(), e );
-	}
-
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
-		try {
-			delegate.set( name, value, document, luceneOptions );
-		}
-		catch (Exception e) {
-			throw buildBridgeException( e, "set" );
-		}
 	}
 
 	public ContextualExceptionBridge pushMethod(XMember xMember) {
@@ -97,4 +86,22 @@ public class ContextualExceptionBridge implements FieldBridge {
 		return this;
 	}
 
+	protected BridgeException buildBridgeException(Exception e, String method) {
+		StringBuilder error = new StringBuilder( "Exception while calling bridge#" );
+		error.append( method );
+		if ( clazz != null ) {
+			error.append( "\n\tclass: " ).append( clazz.getName() );
+		}
+		if ( path.size() > 0 ) {
+			error.append( "\n\tpath: " );
+			for ( XMember pathNode : path ) {
+				error.append( pathNode.getName() ).append( "." );
+			}
+			error.deleteCharAt( error.length() - 1 );
+		}
+		if ( fieldName != null ) {
+			error.append( "\n\tfield bridge: " ).append( fieldName );
+		}
+		throw new BridgeException( error.toString(), e );
+	}
 }

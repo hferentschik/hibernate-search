@@ -19,6 +19,7 @@
 package org.hibernate.search.bridge.builtin;
 
 import org.apache.lucene.document.Document;
+
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.LuceneOptions;
 
@@ -29,40 +30,38 @@ import org.hibernate.search.bridge.LuceneOptions;
  * A {@code null} {@link java.lang.Iterable} object is not indexed.
  *
  * @author Davide D'Alto
+ * @author Hardy Ferentschik
  */
 public class IterableBridge implements FieldBridge {
-
 	private final FieldBridge bridge;
 
 	/**
-	 * @param bridge
-	 *            the {@link FieldBridge} used for each entry of the {@link java.lang.Iterable} object.
+	 * @param bridge the {@link FieldBridge} used for each entry of the {@link java.lang.Iterable} object.
 	 */
 	public IterableBridge(FieldBridge bridge) {
 		this.bridge = bridge;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.hibernate.search.bridge.FieldBridge#set(java.lang.String, java.lang.Object, org.apache.lucene.document.Document, org.hibernate.search.bridge.LuceneOptions)
-	 */
 	@Override
-	public void set(String fieldName, Object value, Document document, LuceneOptions luceneOptions) {
+	public void initialize(String name, LuceneOptions luceneOptions) {
+		bridge.initialize( name, luceneOptions );
+	}
+
+	@Override
+	public void set(Object value, Document document) {
 		if ( value != null ) {
-			indexNotNullIterable( fieldName, value, document, luceneOptions );
+			indexNotNullIterable( value, document );
 		}
 	}
 
-	private void indexNotNullIterable(String name, Object value, Document document, LuceneOptions luceneOptions) {
+	private void indexNotNullIterable(Object value, Document document) {
 		Iterable<?> collection = (Iterable<?>) value;
 		for ( Object entry : collection ) {
-			indexEntry( name, entry, document, luceneOptions );
+			indexEntry( entry, document );
 		}
 	}
 
-	private void indexEntry(String fieldName, Object entry, Document document, LuceneOptions luceneOptions) {
-		bridge.set( fieldName, entry, document, luceneOptions );
+	private void indexEntry(Object entry, Document document) {
+		bridge.set( entry, document );
 	}
-
 }

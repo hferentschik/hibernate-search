@@ -20,6 +20,7 @@
 package org.hibernate.search.test.engine.optimizations;
 
 import org.apache.lucene.document.Document;
+
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.LuceneOptions;
 
@@ -27,14 +28,16 @@ import org.hibernate.search.bridge.LuceneOptions;
  * @author Sanne Grinovero <sanne@hibernate.org> (C) 2011 Red Hat Inc.
  */
 public class ItemClassBridge implements FieldBridge {
+	@Override
+	public void initialize(String name, LuceneOptions luceneOptions) {
+	}
 
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
+	@Override
+	public void set(Object value, Document document) {
 		// not very relevant what we do here, but in theory I could navigate all the graph from value
 		// and affect the index state.
 		// but the fact a ClassBridge is defined should prevent
 		// the engine from applying optimizations based on assumptions some field is not going
 		// to affect the index state.
 	}
-	
-
 }

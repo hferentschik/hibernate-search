@@ -446,7 +446,7 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 		if ( idGetter != null ) {
 			contextualBridge.pushMethod( idGetter );
 		}
-		contextualBridge.set( idKeywordName, id, doc, luceneOptions );
+		contextualBridge.set(  id, doc );
 		if ( idGetter != null ) {
 			contextualBridge.popMethod();
 		}
@@ -475,10 +475,7 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 			contextualBridge
 					.setFieldBridge( fb )
 					.setFieldName( fieldName )
-					.set(
-							fieldName, unproxiedInstance,
-							doc, propertiesMetadata.getClassLuceneOptions( i )
-					);
+					.set(unproxiedInstance, doc );
 		}
 
 		// process the indexed fields
@@ -497,10 +494,7 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 					.setFieldBridge( fieldBridge )
 					.pushMethod( member )
 					.setFieldName( fieldName )
-					.set(
-							fieldName, currentFieldValue, doc,
-							propertiesMetadata.getFieldLuceneOptions( i, currentFieldValue )
-					);
+					.set( currentFieldValue, doc );
 			contextualBridge.popMethod();
 		}
 
@@ -595,7 +589,7 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 				.setFieldBridge( fieldBridge )
 				.pushMethod( member )
 				.setFieldName( fieldName )
-				.set( fieldName, value, doc, NULL_EMBEDDED_MARKER_OPTIONS );
+				.set( value, doc );
 			contextualBridge.popMethod();
 		}
 	}

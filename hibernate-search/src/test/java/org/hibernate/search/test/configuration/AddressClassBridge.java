@@ -22,15 +22,14 @@ package org.hibernate.search.test.configuration;
 
 import org.apache.lucene.document.Document;
 
-import org.hibernate.search.bridge.FieldBridge;
-import org.hibernate.search.bridge.LuceneOptions;
+import org.hibernate.search.bridge.AbstractFieldBridge;
 
 /**
  * @author Emmanuel Bernard <emmanuel@hibernate.org>
  */
-public class AddressClassBridge implements FieldBridge {
+public class AddressClassBridge extends AbstractFieldBridge {
 	@Override
-	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
-		luceneOptions.addFieldToDocument( "AddressClassBridge", "Applied!", document );
+	public void set(Object value, Document document) {
+		getLuceneOptions().addFieldToDocument( "AddressClassBridge", "Applied!", document );
 	}
 }

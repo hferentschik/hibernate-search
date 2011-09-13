@@ -24,35 +24,38 @@
 package org.hibernate.search.test.batchindexing;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.hibernate.search.bridge.LuceneOptions;
+import org.apache.lucene.document.Fieldable;
+
+import org.hibernate.search.bridge.AbstractFieldBridge;
 import org.hibernate.search.bridge.TwoWayFieldBridge;
 
 /**
  * @author Bayo Erinle
  */
-public class LegacyTirePKBridge implements TwoWayFieldBridge {
-
+public class LegacyTirePKBridge extends AbstractFieldBridge implements TwoWayFieldBridge {
 	private static final String CAR_ID = ".carId";
 	private static final String TIRE_ID = ".tireId";
 
+	@Override
+	public void set(Object o, Document document) {
+		LegacyTirePK id = (LegacyTirePK) o;
+		getLuceneOptions().addFieldToDocument( getFieldName() + CAR_ID, id.getCarId(), document );
+		getLuceneOptions().addFieldToDocument( getFieldName() + TIRE_ID, id.getTireId(), document );
+	}
+
+	@Override
 	public Object get(String name, Document document) {
 		LegacyTirePK id = new LegacyTirePK();
-		Field field = document.getField( name + CAR_ID );
+		Fieldable field = document.getFieldable( name + CAR_ID );
 		id.setCarId( field.stringValue() );
-		field = document.getField( name + TIRE_ID );
+		field = document.getFieldable( name + TIRE_ID );
 		id.setTireId( field.stringValue() );
 		return id;
 	}
 
+	@Override
 	public String objectToString(Object o) {
 		LegacyTirePK id = (LegacyTirePK) o;
 		return new StringBuilder().append( id.getCarId() ).append( "-" ).append( id.getTireId() ).toString();
-	}
-
-	public void set(String name, Object o, Document document, LuceneOptions luceneOptions) {
-		LegacyTirePK id = (LegacyTirePK) o;
-		luceneOptions.addFieldToDocument( name + CAR_ID, id.getCarId(), document );
-		luceneOptions.addFieldToDocument( name + TIRE_ID, id.getTireId(), document );
 	}
 }
