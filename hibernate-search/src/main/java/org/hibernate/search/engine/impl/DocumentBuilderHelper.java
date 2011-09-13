@@ -32,12 +32,6 @@ import org.apache.lucene.document.CompressionTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Fieldable;
 
-import org.hibernate.search.engine.spi.AbstractDocumentBuilder;
-import org.hibernate.search.engine.spi.DocumentBuilderIndexedEntity;
-import org.hibernate.search.engine.spi.EntityIndexBinder;
-import org.hibernate.search.engine.spi.SearchFactoryImplementor;
-import org.hibernate.search.util.logging.impl.Log;
-
 import org.hibernate.annotations.common.reflection.XMember;
 import org.hibernate.annotations.common.util.ReflectHelper;
 import org.hibernate.search.SearchException;
@@ -45,9 +39,16 @@ import org.hibernate.search.annotations.Store;
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.TwoWayFieldBridge;
 import org.hibernate.search.bridge.util.impl.ContextualException2WayBridge;
+import org.hibernate.search.engine.spi.AbstractDocumentBuilder;
+import org.hibernate.search.engine.spi.DocumentBuilderIndexedEntity;
+import org.hibernate.search.engine.spi.EntityIndexBinder;
+import org.hibernate.search.engine.spi.SearchFactoryImplementor;
+import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
 
 /**
+ * A helper class with several methods around {@link Document} and entity manipulation.
+ *
  * @author Hardy Ferentschik
  * @author Sanne Grinovero
  */
@@ -58,7 +59,7 @@ public final class DocumentBuilderHelper {
 	private DocumentBuilderHelper() {
 	}
 
-	public static Class getDocumentClass(String className) {
+	public static Class<?> getDocumentClass(String className) {
 		try {
 			return ReflectHelper.classForName( className );
 		}
@@ -68,7 +69,10 @@ public final class DocumentBuilderHelper {
 	}
 
 	public static Serializable getDocumentId(SearchFactoryImplementor searchFactoryImplementor, Class<?> clazz, Document document) {
-		final DocumentBuilderIndexedEntity<?> builderIndexedEntity = getDocumentBuilder( searchFactoryImplementor, clazz );
+		final DocumentBuilderIndexedEntity<?> builderIndexedEntity = getDocumentBuilder(
+				searchFactoryImplementor,
+				clazz
+		);
 		final TwoWayFieldBridge fieldBridge = builderIndexedEntity.getIdBridge();
 		final String fieldName = builderIndexedEntity.getIdKeywordName();
 		ContextualException2WayBridge contextualBridge = new ContextualException2WayBridge();
@@ -85,7 +89,10 @@ public final class DocumentBuilderHelper {
 		return documentBuilder.getIdentifierName();
 	}
 
-	public static Object[] getDocumentFields(SearchFactoryImplementor searchFactoryImplementor, Class<?> clazz, Document document, String[] fields) {
+	public static Object[] getDocumentFields(SearchFactoryImplementor searchFactoryImplementor,
+											 Class<?> clazz,
+											 Document document,
+											 String[] fields) {
 		DocumentBuilderIndexedEntity<?> builderIndexedEntity = getDocumentBuilder( searchFactoryImplementor, clazz );
 		final int fieldNbr = fields.length;
 		Object[] result = new Object[fieldNbr];
@@ -105,12 +112,11 @@ public final class DocumentBuilderHelper {
 							fieldName,
 							builderIndexedEntity.getIdBridge(),
 							Store.YES,
-							fields,
 							result,
 							document,
 							contextualBridge,
 							matchingPosition
-							);
+					);
 				}
 				finally {
 					if ( member != null ) {
@@ -125,8 +131,13 @@ public final class DocumentBuilderHelper {
 		return result;
 	}
 
-	public static void populateResult(String fieldName, FieldBridge fieldBridge, Store store,
-									  String[] fields, Object[] result, Document document, ContextualException2WayBridge contextualBridge, int matchingPosition) {
+	private static void populateResult(String fieldName,
+									  FieldBridge fieldBridge,
+									  Store store,
+									  Object[] result,
+									  Document document,
+									  ContextualException2WayBridge contextualBridge,
+									  int matchingPosition) {
 		//TODO make use of an isTwoWay() method
 		if ( store != Store.NO && TwoWayFieldBridge.class.isAssignableFrom( fieldBridge.getClass() ) ) {
 			contextualBridge.setFieldName( fieldName ).setFieldBridge( (TwoWayFieldBridge) fieldBridge );
@@ -145,7 +156,11 @@ public final class DocumentBuilderHelper {
 		}
 	}
 
-	private static void processFieldsForProjection(AbstractDocumentBuilder.PropertiesMetadata metadata, String[] fields, Object[] result, Document document, ContextualException2WayBridge contextualBridge) {
+	private static void processFieldsForProjection(AbstractDocumentBuilder.PropertiesMetadata metadata,
+												   String[] fields,
+												   Object[] result,
+												   Document document,
+												   ContextualException2WayBridge contextualBridge) {
 		//process base fields
 		final int nbrFoEntityFields = metadata.fieldNames.size();
 		for ( int index = 0; index < nbrFoEntityFields; index++ ) {
@@ -158,13 +173,13 @@ public final class DocumentBuilderHelper {
 							fieldName,
 							metadata.fieldBridges.get( index ),
 							metadata.fieldStore.get( index ),
-							fields,
 							result,
 							document,
 							contextualBridge,
 							matchingPosition
-							);
-				} finally {
+					);
+				}
+				finally {
 					contextualBridge.popMethod();
 				}
 			}
@@ -194,7 +209,6 @@ public final class DocumentBuilderHelper {
 						fieldName,
 						metadata.classBridges.get( index ),
 						metadata.classStores.get( index ),
-						fields,
 						result,
 						document,
 						contextualBridge,
@@ -222,7 +236,7 @@ public final class DocumentBuilderHelper {
 			try {
 				return CompressionTools.decompressString( field.getBinaryValue() );
 			}
-			catch (DataFormatException e) {
+			catch ( DataFormatException e ) {
 				throw log.fieldLooksBinaryButDecompressionFailed( field.name() );
 			}
 		}
@@ -240,7 +254,7 @@ public final class DocumentBuilderHelper {
 		}
 		return -1;
 	}
-	
+
 	private static DocumentBuilderIndexedEntity<?> getDocumentBuilder(SearchFactoryImplementor searchFactoryImplementor, Class<?> clazz) {
 		EntityIndexBinder<?> entityIndexBinding = searchFactoryImplementor.getIndexBindingForEntity(
 				clazz
