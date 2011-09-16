@@ -251,7 +251,12 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 				}
 				idKeywordName = prefix + attributeName;
 
-				FieldBridge fieldBridge = BridgeFactory.guessType( null, numericFieldAnn, member, reflectionManager );
+				FieldBridge fieldBridge = BridgeFactory.createFieldBridge(
+						null,
+						numericFieldAnn,
+						member,
+						reflectionManager
+				);
 				if ( fieldBridge instanceof TwoWayFieldBridge ) {
 					idBridge = (TwoWayFieldBridge) fieldBridge;
 				}
@@ -275,7 +280,12 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 				propertiesMetadata.fieldIndex.add( index );
 				propertiesMetadata.fieldTermVectors.add( getTermVector( TermVector.NO ) );
 				propertiesMetadata.fieldNullTokens.add( null );
-				propertiesMetadata.fieldBridges.add( BridgeFactory.guessType( null, null, member, reflectionManager ) );
+				propertiesMetadata.fieldBridges.add( BridgeFactory.createFieldBridge(
+						null,
+						null,
+						member,
+						reflectionManager
+				) );
 				propertiesMetadata.fieldBoosts.add( getBoost( member, null ) );
 				propertiesMetadata.precisionSteps.add( getPrecisionStep( null ) );
 				propertiesMetadata.dynamicFieldBoosts.add( getDynamicBoost( member ) );

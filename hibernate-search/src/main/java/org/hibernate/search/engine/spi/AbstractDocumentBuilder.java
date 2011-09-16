@@ -745,7 +745,7 @@ public abstract class AbstractDocumentBuilder<T> implements DocumentBuilder {
 		}
 		else {
 			NumericField numericField = member.getAnnotation( NumericField.class );
-			FieldBridge fieldBridge = BridgeFactory.guessType( null, numericField, member, reflectionManager );
+			FieldBridge fieldBridge = BridgeFactory.createFieldBridge( null, numericField, member, reflectionManager );
 			if ( fieldBridge instanceof StringBridge ) {
 				fieldBridge = new NullEncodingFieldBridge( (StringBridge) fieldBridge, indexNullAs );
 			}
@@ -760,7 +760,7 @@ public abstract class AbstractDocumentBuilder<T> implements DocumentBuilder {
 		Field.Index index = getIndex( ann.index(), ann.analyze(), ann.norms() );
 		propertiesMetadata.classIndexes.add( index );
 		propertiesMetadata.classTermVectors.add( getTermVector( ann.termVector() ) );
-		propertiesMetadata.classBridges.add( BridgeFactory.extractType( ann, clazz ) );
+		propertiesMetadata.classBridges.add( BridgeFactory.createClassBridge( ann, clazz ) );
 		propertiesMetadata.classBoosts.add( ann.boost().value() );
 
 		Analyzer analyzer = getAnalyzer( ann.analyzer(), context );
@@ -799,10 +799,16 @@ public abstract class AbstractDocumentBuilder<T> implements DocumentBuilder {
 		}
 		propertiesMetadata.fieldNullTokens.add( indexNullAs );
 
-		FieldBridge fieldBridge = BridgeFactory.guessType( fieldAnn, numericFieldAnn, member, reflectionManager );
+		FieldBridge fieldBridge = BridgeFactory.createFieldBridge(
+				fieldAnn,
+				numericFieldAnn,
+				member,
+				reflectionManager
+		);
 		if ( indexNullAs != null && fieldBridge instanceof TwoWayFieldBridge ) {
 			fieldBridge = new NullEncodingTwoWayFieldBridge( (TwoWayFieldBridge) fieldBridge, indexNullAs );
 		}
+		fieldBridge.initialize( fieldName, null );
 		propertiesMetadata.fieldBridges.add( fieldBridge );
 
 		// Field > property > entity analyzer
