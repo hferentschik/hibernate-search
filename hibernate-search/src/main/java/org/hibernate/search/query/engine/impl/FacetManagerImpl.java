@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.Query;
@@ -165,16 +166,16 @@ public class FacetManagerImpl implements FacetManager {
 	}
 
 	private Query createSelectionGroupQuery(FacetSelectionImpl selection) {
-		BooleanQuery orQuery = new BooleanQuery();
+		BooleanQuery query = new BooleanQuery();
 		for ( Facet facet : selection.getFacetList() ) {
-			orQuery.add( facet.getFacetQuery(), BooleanClause.Occur.SHOULD );
+			query.add( facet.getFacetQuery(), selection.getBooleanOperator() );
 		}
-		return orQuery;
+		return query;
 	}
 
 	class FacetSelectionImpl implements FacetSelection {
 		private final List<Facet> facetList = newArrayList();
-
+		private Occur occurType = BooleanClause.Occur.SHOULD;
 		public List<Facet> getFacetList() {
 			return facetList;
 		}
@@ -185,6 +186,20 @@ public class FacetManagerImpl implements FacetManager {
 			}
 			facetList.addAll( Arrays.asList( facets ) );
 			queryHasChanged();
+		}
+		
+		public FacetSelection should() {
+			occurType = BooleanClause.Occur.SHOULD;
+			return this;
+		}
+		
+		public FacetSelection must() {
+			occurType = BooleanClause.Occur.MUST;
+			return this;
+		}
+		
+		public Occur getBooleanOperator() {
+			return occurType;
 		}
 
 		public List<Facet> getSelectedFacets() {
@@ -204,5 +219,3 @@ public class FacetManagerImpl implements FacetManager {
 		}
 	}
 }
-
-

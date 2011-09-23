@@ -1779,6 +1779,9 @@ public class Cd {
 
     @Field(analyze = Analyze.NO)
     private String label;
+    
+    @IndexedEmbedded(depth = 1, prefix = "artists.")
+    private Set&lt;Artist&gt; artists;
 
 
 // setter/getter
@@ -1952,6 +1955,19 @@ facetManager.getFacetGroup( "priceFaceting" ).selectFacets( facets.get( 0 ) );
 // re-execute the query
 cds = fullTextQuery.list();
 assertTrue(cds.size() == 2);</programlisting>
+      </example>
+      <para>Additionally, you can define how selected facets should be applied.
+      By default the disjunction (<literal>should</literal>) is taken. In case a
+      field might have multiple values, like <classname>Cd.artists</classname>, you might
+      want to take the conjunction (<literal>must</literal>) of the facet selection. The 
+      following example shows how to set this selection behavior.</para>
+      <example id="example-restricting-query-results-conjunction">
+        <title>Restricting query results by multiple <classname>Facets</classname></title>
+
+        <programlisting language="JAVA" role="JAVA">// select multiple facets
+facetManager.getFacetGroup( "artistFaceting" )
+    .must()
+    .selectFacets( facets.get( 0 ), facets.get( 1 ) );</programlisting>
       </example>
     </section>
   </section>
