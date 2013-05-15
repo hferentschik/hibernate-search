@@ -20,13 +20,13 @@
  */
 package org.hibernate.search.impl;
 
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.search.cfg.spi.IndexManagerFactory;
 import org.hibernate.search.indexes.impl.DirectoryBasedIndexManager;
 import org.hibernate.search.indexes.impl.IndexManagerHolder;
 import org.hibernate.search.indexes.impl.NRTIndexManager;
 import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
+import org.hibernate.search.util.impl.StringHelper;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
 
@@ -54,8 +54,10 @@ public class DefaultIndexManagerFactory implements IndexManagerFactory {
 			IndexManager im = fromAlias( implName );
 			if ( im == null ) {
 				implName = aliasToFQN( implName );
-				im = ClassLoaderHelper.instanceFromName( IndexManager.class, implName,
-						IndexManagerHolder.class, "index manager" );
+				im = ClassLoaderHelper.instanceFromName(
+						IndexManager.class, implName,
+						IndexManagerHolder.class, "index manager"
+				);
 			}
 			log.indexManagerAliasResolved( indexManagerImplementationName, im.getClass() );
 			return im;
@@ -68,6 +70,7 @@ public class DefaultIndexManagerFactory implements IndexManagerFactory {
 	 * known implementations which are optional on the classpath.
 	 *
 	 * @param implName
+	 *
 	 * @return the same name, or a fully qualified class name to use instead
 	 */
 	protected String aliasToFQN(final String implName) {
@@ -80,6 +83,7 @@ public class DefaultIndexManagerFactory implements IndexManagerFactory {
 	 * directly create class instances.
 	 *
 	 * @param implName the requested alias
+	 *
 	 * @return <code>null</code> if the alias is unknown.
 	 */
 	protected IndexManager fromAlias(String implName) {

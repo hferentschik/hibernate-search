@@ -42,13 +42,14 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.search.Similarity;
 import org.apache.lucene.util.Version;
-import org.hibernate.annotations.common.AssertionFailure;
+
+import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.annotations.common.reflection.XAnnotatedElement;
 import org.hibernate.annotations.common.reflection.XClass;
 import org.hibernate.annotations.common.reflection.XMember;
 import org.hibernate.annotations.common.reflection.XProperty;
-import org.hibernate.annotations.common.util.StringHelper;
+import org.hibernate.search.util.impl.StringHelper;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.analyzer.Discriminator;
 import org.hibernate.search.annotations.Analyze;
@@ -755,7 +756,10 @@ public abstract class AbstractDocumentBuilder<T> {
 
 	private void updateDepthProperties(XMember memberWithContainedIn, PropertiesMetadata propertiesMetadata, XClass memberReturnedType, XProperty property) {
 		int depth = property.getAnnotation( IndexedEmbedded.class ).depth();
-		propertiesMetadata.containedInDepths.put( depthKey( memberReturnedType, memberWithContainedIn.getName() ), depth );
+		propertiesMetadata.containedInDepths.put(
+				depthKey( memberReturnedType, memberWithContainedIn.getName() ),
+				depth
+		);
 	}
 
 	private String depthKey(XClass clazz, String mappedBy) {
@@ -1018,13 +1022,17 @@ public abstract class AbstractDocumentBuilder<T> {
 			List<XProperty> fieldList = clazz.getDeclaredProperties( XClass.ACCESS_FIELD );
 
 			for ( XProperty property : fieldList ) {
-				if ( property.isAnnotationPresent( Latitude.class ) && ( property.getAnnotation( Latitude.class ) ).of().equals( ann.name() ) ) {
+				if ( property.isAnnotationPresent( Latitude.class ) && ( property.getAnnotation( Latitude.class ) ).of().equals(
+						ann.name()
+				) ) {
 					if ( latitudeField != null ) {
 						throw log.ambiguousLatitudeDefinition( this.beanXClassName, latitudeField, property.getName() );
 					}
 					latitudeField = property.getName();
 				}
-				if ( property.isAnnotationPresent( Longitude.class ) && ( property.getAnnotation( Longitude.class )).of().equals( ann.name() ) ) {
+				if ( property.isAnnotationPresent( Longitude.class ) && ( property.getAnnotation( Longitude.class )).of().equals(
+						ann.name()
+				) ) {
 					if ( longitudeField != null ) {
 						throw log.ambiguousLongitudeDefinition( this.beanXClassName, longitudeField, property.getName() );
 					}
@@ -1035,13 +1043,17 @@ public abstract class AbstractDocumentBuilder<T> {
 			List<XProperty> propertyList = clazz.getDeclaredProperties( XClass.ACCESS_PROPERTY );
 
 			for ( XProperty property : propertyList ) {
-				if ( property.isAnnotationPresent( Latitude.class ) && ( property.getAnnotation( Latitude.class ) ).of().equals( ann.name() ) ) {
+				if ( property.isAnnotationPresent( Latitude.class ) && ( property.getAnnotation( Latitude.class ) ).of().equals(
+						ann.name()
+				) ) {
 					if ( latitudeField != null ) {
 						throw log.ambiguousLatitudeDefinition( this.beanXClassName, latitudeField, property.getName() );
 					}
 					latitudeField = property.getName();
 				}
-				if ( property.isAnnotationPresent( Longitude.class ) && ( property.getAnnotation( Longitude.class )).of().equals( ann.name() ) ) {
+				if ( property.isAnnotationPresent( Longitude.class ) && ( property.getAnnotation( Longitude.class )).of().equals(
+						ann.name()
+				) ) {
 					if ( longitudeField != null ) {
 						throw log.ambiguousLongitudeDefinition( this.beanXClassName, longitudeField, property.getName() );
 					}

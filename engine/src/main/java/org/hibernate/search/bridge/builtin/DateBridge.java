@@ -30,11 +30,11 @@ import java.util.Map;
 
 import org.apache.lucene.document.DateTools;
 
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.annotations.Resolution;
 import org.hibernate.search.bridge.ParameterizedBridge;
 import org.hibernate.search.bridge.TwoWayStringBridge;
+import org.hibernate.search.util.impl.StringHelper;
 
 /**
  * Bridge a {@code java.util.Date} to a {@code String}, truncated to the specified resolution.
@@ -90,7 +90,7 @@ public class DateBridge implements TwoWayStringBridge, ParameterizedBridge {
 				null;
 	}
 
-	public void setParameterValues(Map<String,String> parameters) {
+	public void setParameterValues(Map<String, String> parameters) {
 		String resolution = parameters.get( "resolution" );
 		Resolution hibResolution = Resolution.valueOf( resolution.toUpperCase( Locale.ENGLISH ) );
 		this.resolution = DateResolutionUtil.getLuceneResolution( hibResolution );

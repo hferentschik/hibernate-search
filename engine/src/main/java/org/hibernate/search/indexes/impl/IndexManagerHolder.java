@@ -26,18 +26,18 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.lucene.search.Similarity;
+
 import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.annotations.common.reflection.XClass;
 import org.hibernate.annotations.common.reflection.java.JavaReflectionManager;
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.search.Environment;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
 import org.hibernate.search.engine.impl.MutableEntityIndexBinding;
-import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.indexes.interceptor.DefaultEntityInterceptor;
 import org.hibernate.search.indexes.interceptor.EntityIndexingInterceptor;
+import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.spi.WorkerBuildContext;
 import org.hibernate.search.spi.internals.SearchFactoryImplementorWithShareableState;
 import org.hibernate.search.store.IndexShardingStrategy;
@@ -47,6 +47,7 @@ import org.hibernate.search.store.impl.NotShardedStrategy;
 import org.hibernate.search.util.configuration.impl.ConfigurationParseHelper;
 import org.hibernate.search.util.configuration.impl.MaskedProperty;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
+import org.hibernate.search.util.impl.StringHelper;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
 

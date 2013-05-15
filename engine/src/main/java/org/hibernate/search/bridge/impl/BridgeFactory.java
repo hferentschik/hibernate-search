@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.hibernate.annotations.common.AssertionFailure;
 import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.annotations.common.reflection.XClass;
 import org.hibernate.annotations.common.reflection.XMember;
@@ -81,9 +80,14 @@ import org.hibernate.search.bridge.builtin.impl.String2FieldBridgeAdaptor;
 import org.hibernate.search.bridge.builtin.impl.TwoWayString2FieldBridgeAdaptor;
 import org.hibernate.search.spatial.SpatialFieldBridgeByQuadTree;
 import org.hibernate.search.spatial.SpatialFieldBridgeByRange;
+import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
+
+//import org.hibernate.annotations.common.reflection.ReflectionManager;
+//import org.hibernate.annotations.common.reflection.XClass;
+//import org.hibernate.annotations.common.reflection.XMember;
 
 /**
  * This factory is responsible for creating and initializing build-in and custom <i>FieldBridges</i>.
@@ -793,7 +797,7 @@ public final class BridgeFactory {
 	 * @param appliedOnType the type the bridge is applied on
 	 * @param reflectionManager The reflection manager instance
 	 * @return a TwoWayFieldBridge instance if the Field Bridge is an instance of a TwoWayFieldBridge.
-	 * @throws SearchException if the FieldBridge passed in is not an instance of a TwoWayFieldBridge.
+	 * @throws org.hibernate.search.SearchException if the FieldBridge passed in is not an instance of a TwoWayFieldBridge.
 	 */
 	public static TwoWayFieldBridge extractTwoWayType(org.hibernate.search.annotations.FieldBridge fieldBridge,
 													XClass appliedOnType,

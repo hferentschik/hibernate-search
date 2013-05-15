@@ -23,18 +23,19 @@
  */
 package org.hibernate.search.bridge.builtin;
 
-import org.hibernate.annotations.common.util.StringHelper;
+import java.text.ParseException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Map;
+
+import org.apache.lucene.document.DateTools;
+
 import org.hibernate.search.SearchException;
 import org.hibernate.search.annotations.Resolution;
 import org.hibernate.search.bridge.ParameterizedBridge;
 import org.hibernate.search.bridge.TwoWayStringBridge;
-import org.apache.lucene.document.DateTools;
-
-import java.util.Date;
-import java.util.Calendar;
-import java.util.Locale;
-import java.util.Map;
-import java.text.ParseException;
+import org.hibernate.search.util.impl.StringHelper;
 
 public class CalendarBridge implements TwoWayStringBridge, ParameterizedBridge {
 
@@ -53,10 +54,10 @@ public class CalendarBridge implements TwoWayStringBridge, ParameterizedBridge {
 	}
 
 	public CalendarBridge(Resolution resolution) {
-		this.resolution = DateResolutionUtil.getLuceneResolution( resolution);
+		this.resolution = DateResolutionUtil.getLuceneResolution( resolution );
 	}
 
-	public void setParameterValues(Map<String,String> parameters) {
+	public void setParameterValues(Map<String, String> parameters) {
 		Object resolution = parameters.get( RESOLUTION_PARAMETER );
 		Resolution hibResolution = Resolution.valueOf( ( (String) resolution ).toUpperCase( Locale.ENGLISH ) );
 		this.resolution = DateResolutionUtil.getLuceneResolution( hibResolution );

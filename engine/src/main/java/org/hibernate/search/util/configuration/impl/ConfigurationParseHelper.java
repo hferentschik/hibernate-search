@@ -27,8 +27,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
 
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.search.SearchException;
+import org.hibernate.search.util.impl.StringHelper;
 
 /**
  * Helper class:
@@ -49,6 +49,7 @@ public abstract class ConfigurationParseHelper {
 	 * resource.
 	 *
 	 * @param path The path representing the config location.
+	 *
 	 * @return An appropriate URL or null.
 	 */
 	public static URL locateConfig(final String path) {
@@ -66,6 +67,7 @@ public abstract class ConfigurationParseHelper {
 	 * java system resource.
 	 *
 	 * @param path The path representing the config location.
+	 *
 	 * @return An appropriate URL or null.
 	 */
 	public static URL findAsResource(final String path) {
@@ -99,7 +101,9 @@ public abstract class ConfigurationParseHelper {
 	 *
 	 * @param value A string containing an int value to parse
 	 * @param errorMsgOnParseFailure message being wrapped in a SearchException if value is null or not correct.
+	 *
 	 * @return the parsed value
+	 *
 	 * @throws SearchException both for null values and for Strings not containing a valid int.
 	 */
 	public static final int parseInt(String value, String errorMsgOnParseFailure) {
@@ -110,7 +114,7 @@ public abstract class ConfigurationParseHelper {
 			try {
 				return Integer.parseInt( value.trim() );
 			}
-			catch (NumberFormatException nfe) {
+			catch ( NumberFormatException nfe ) {
 				throw new SearchException( errorMsgOnParseFailure, nfe );
 			}
 		}
@@ -121,7 +125,9 @@ public abstract class ConfigurationParseHelper {
 	 *
 	 * @param value A string containing an long value to parse
 	 * @param errorMsgOnParseFailure message being wrapped in a SearchException if value is null or not correct.
+	 *
 	 * @return the parsed value
+	 *
 	 * @throws SearchException both for null values and for Strings not containing a valid int.
 	 */
 	public static final long parseLong(String value, String errorMsgOnParseFailure) {
@@ -132,7 +138,7 @@ public abstract class ConfigurationParseHelper {
 			try {
 				return Long.parseLong( value.trim() );
 			}
-			catch (NumberFormatException nfe) {
+			catch ( NumberFormatException nfe ) {
 				throw new SearchException( errorMsgOnParseFailure, nfe );
 			}
 		}
@@ -140,10 +146,13 @@ public abstract class ConfigurationParseHelper {
 
 	/**
 	 * In case value is null or an empty string the defValue is returned
+	 *
 	 * @param value
 	 * @param defValue
 	 * @param errorMsgOnParseFailure
+	 *
 	 * @return the converted int.
+	 *
 	 * @throws SearchException if value can't be parsed.
 	 */
 	public static final int parseInt(String value, int defValue, String errorMsgOnParseFailure) {
@@ -157,10 +166,13 @@ public abstract class ConfigurationParseHelper {
 
 	/**
 	 * In case value is null or an empty string the defValue is returned
+	 *
 	 * @param value
 	 * @param defValue
 	 * @param errorMsgOnParseFailure
+	 *
 	 * @return the converted long.
+	 *
 	 * @throws SearchException if value can't be parsed.
 	 */
 	public static final long parseLong(String value, long defValue, String errorMsgOnParseFailure) {
@@ -177,10 +189,13 @@ public abstract class ConfigurationParseHelper {
 	 * defValue if not found or if an empty string is found.
 	 * When the key the value is found but not in valid format
 	 * a standard error message is generated.
+	 *
 	 * @param cfg
 	 * @param key
 	 * @param defValue
+	 *
 	 * @return the converted int.
+	 *
 	 * @throws SearchException for invalid format.
 	 */
 	public static final int getIntValue(Properties cfg, String key, int defValue) {
@@ -193,10 +208,13 @@ public abstract class ConfigurationParseHelper {
 	 * defValue if not found or if an empty string is found.
 	 * When the key the value is found but not in valid format
 	 * a standard error message is generated.
+	 *
 	 * @param cfg
 	 * @param key
 	 * @param defValue
+	 *
 	 * @return the converted long value.
+	 *
 	 * @throws SearchException for invalid format.
 	 */
 	public static long getLongValue(Properties cfg, String key, long defaultValue) {
@@ -209,7 +227,9 @@ public abstract class ConfigurationParseHelper {
 	 *
 	 * @param value the string to be parsed
 	 * @param errorMsgOnParseFailure the message to be put in the exception if thrown
+	 *
 	 * @return true if value is "true", false if value is "false"
+	 *
 	 * @throws SearchException for invalid format or values.
 	 */
 	public static final boolean parseBoolean(String value, String errorMsgOnParseFailure) {
@@ -234,7 +254,9 @@ public abstract class ConfigurationParseHelper {
 	 * @param cfg configuration Properties
 	 * @param key the property key
 	 * @param defaultValue a boolean.
+	 *
 	 * @return the defaultValue if the property was not defined
+	 *
 	 * @throws SearchException for invalid format or values.
 	 */
 	public static final boolean getBooleanValue(Properties cfg, String key, boolean defaultValue) {

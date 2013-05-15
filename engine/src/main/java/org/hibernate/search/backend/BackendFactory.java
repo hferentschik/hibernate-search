@@ -23,7 +23,6 @@ package org.hibernate.search.backend;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.search.Environment;
 import org.hibernate.search.backend.impl.blackhole.BlackHoleBackendQueueProcessor;
 import org.hibernate.search.backend.impl.jgroups.AutoNodeSelector;
@@ -38,16 +37,12 @@ import org.hibernate.search.indexes.impl.DirectoryBasedIndexManager;
 import org.hibernate.search.spi.WorkerBuildContext;
 import org.hibernate.search.util.configuration.impl.ConfigurationParseHelper;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
-import org.hibernate.search.util.logging.impl.Log;
-import org.hibernate.search.util.logging.impl.LoggerFactory;
+import org.hibernate.search.util.impl.StringHelper;
 
 /**
  * @author Sanne Grinovero <sanne@hibernate.org> (C) 2011 Red Hat Inc.
  */
 public class BackendFactory {
-
-	private static final Log log = LoggerFactory.make();
-
 	public static BackendQueueProcessor createBackend(DirectoryBasedIndexManager indexManager, WorkerBuildContext context, Properties properties) {
 		String backend = properties.getProperty( Environment.WORKER_BACKEND );
 		return createBackend( backend, indexManager, context, properties );
@@ -101,6 +96,7 @@ public class BackendFactory {
 	 *
 	 * @param properties Might optionally contain configuration options for the ExecutorService
 	 * @param indexManagerName The indexManager going to be linked to this ExecutorService
+	 *
 	 * @return null if the work needs execution in sync
 	 */
 	public static ExecutorService buildWorkersExecutor(Properties properties, String indexManagerName) {

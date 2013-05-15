@@ -52,7 +52,7 @@ import org.hibernate.search.util.impl.ClassLoaderHelper;
 import org.hibernate.search.util.impl.ReflectionHelper;
 import org.hibernate.search.util.logging.impl.Log;
 
-import org.hibernate.annotations.common.AssertionFailure;
+import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.annotations.common.reflection.XClass;
 import org.hibernate.annotations.common.reflection.XMember;

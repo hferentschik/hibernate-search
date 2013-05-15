@@ -28,7 +28,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 
 import org.hibernate.annotations.common.reflection.XMember;
-import org.hibernate.annotations.common.util.StringHelper;
 
 /**
  * @author Emmanuel Bernard
@@ -44,6 +43,7 @@ public abstract class ReflectionHelper {
 	 *
 	 * @param member <code>XMember</code> from which to extract the name.
 	 * @param name Override value which will be returned in case it is not empty.
+	 *
 	 * @return attribute name out of member unless overridden by <code>name</code>.
 	 */
 	public static String getAttributeName(XMember member, String name) {

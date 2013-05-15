@@ -33,7 +33,6 @@ import javax.transaction.Status;
 import javax.transaction.Synchronization;
 
 import org.hibernate.Session;
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.collection.spi.PersistentCollection;
 import org.hibernate.engine.spi.EntityEntry;
@@ -69,6 +68,7 @@ import org.hibernate.search.jmx.IndexControl;
 import org.hibernate.search.jmx.impl.JMXRegistrar;
 import org.hibernate.search.spi.SearchFactoryBuilder;
 import org.hibernate.search.util.impl.ReflectionHelper;
+import org.hibernate.search.util.impl.StringHelper;
 import org.hibernate.search.util.impl.WeakIdentityHashMap;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;

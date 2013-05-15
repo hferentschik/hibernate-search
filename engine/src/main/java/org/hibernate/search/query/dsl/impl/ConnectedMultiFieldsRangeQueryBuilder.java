@@ -32,7 +32,7 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermRangeQuery;
 
-import org.hibernate.annotations.common.AssertionFailure;
+import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.builtin.NumericFieldBridge;
 import org.hibernate.search.bridge.spi.ConversionContext;

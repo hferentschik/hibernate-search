@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.lucene.index.IndexReader;
 
-import org.hibernate.annotations.common.AssertionFailure;
+import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.search.backend.AddLuceneWork;
 import org.hibernate.search.backend.DeleteLuceneWork;
 import org.hibernate.search.backend.FlushLuceneWork;

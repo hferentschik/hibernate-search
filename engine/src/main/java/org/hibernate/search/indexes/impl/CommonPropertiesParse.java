@@ -22,7 +22,6 @@ package org.hibernate.search.indexes.impl;
 
 import java.util.Properties;
 
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.search.Environment;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.backend.spi.LuceneIndexingParameters;
@@ -31,11 +30,12 @@ import org.hibernate.search.indexes.spi.DirectoryBasedReaderProvider;
 import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.spi.WorkerBuildContext;
 import org.hibernate.search.store.optimization.OptimizerStrategy;
-import org.hibernate.search.store.optimization.impl.IncrementalOptimizerStrategy;
 import org.hibernate.search.store.optimization.impl.ExplicitOnlyOptimizerStrategy;
+import org.hibernate.search.store.optimization.impl.IncrementalOptimizerStrategy;
 import org.hibernate.search.util.configuration.impl.ConfigurationParseHelper;
 import org.hibernate.search.util.configuration.impl.MaskedProperty;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
+import org.hibernate.search.util.impl.StringHelper;
 
 /**
  * Contains helper to parse properties which should be read by the majority
@@ -64,15 +64,21 @@ public class CommonPropertiesParse {
 	 *
 	 * @param indexProps The index configuration properties
 	 * @param context The WorkerBuildContext provides a view of the default setting
+	 *
 	 * @return {@code true} when the index metadata is fully defined.
 	 */
 	public static boolean isIndexMetadataComplete(Properties indexProps, WorkerBuildContext context) {
-		return ConfigurationParseHelper.getBooleanValue( indexProps, Environment.INDEX_METADATA_COMPLETE, context.isIndexMetadataComplete() );
+		return ConfigurationParseHelper.getBooleanValue(
+				indexProps,
+				Environment.INDEX_METADATA_COMPLETE,
+				context.isIndexMetadataComplete()
+		);
 	}
 
 	/**
 	 * @param indexName
 	 * @param indexProps MaskedProperties for this IndexManager
+	 *
 	 * @return the maximum queue length to be used on the backends of this index
 	 */
 	public static int extractMaxQueueSize(String indexName, Properties indexProps) {
@@ -84,8 +90,10 @@ public class CommonPropertiesParse {
 							"Illegal value for property " + Environment.MAX_QUEUE_LENGTH + " on index " + indexName
 					);
 			if ( parsedInt < 1 ) {
-				throw new SearchException( "Property " + Environment.MAX_QUEUE_LENGTH + " on index "
-						+ indexName + "must be strictly positive" );
+				throw new SearchException(
+						"Property " + Environment.MAX_QUEUE_LENGTH + " on index "
+								+ indexName + "must be strictly positive"
+				);
 			}
 			return parsedInt;
 		}
@@ -95,14 +103,19 @@ public class CommonPropertiesParse {
 	}
 
 	public static OptimizerStrategy getOptimizerStrategy(IndexManager callback, Properties indexProps) {
-		MaskedProperty optimizerCfg = new MaskedProperty(indexProps, "optimizer" );
+		MaskedProperty optimizerCfg = new MaskedProperty( indexProps, "optimizer" );
 		String customImplementation = optimizerCfg.getProperty( "implementation" );
-		if ( customImplementation != null && (! "default".equalsIgnoreCase( customImplementation ) ) ) {
-			return ClassLoaderHelper.instanceFromName( OptimizerStrategy.class, customImplementation, callback.getClass(), "Optimizer Strategy" );
+		if ( customImplementation != null && ( !"default".equalsIgnoreCase( customImplementation ) ) ) {
+			return ClassLoaderHelper.instanceFromName(
+					OptimizerStrategy.class,
+					customImplementation,
+					callback.getClass(),
+					"Optimizer Strategy"
+			);
 		}
 		else {
 			boolean incremental = optimizerCfg.containsKey( "operation_limit.max" )
-				|| optimizerCfg.containsKey( "transaction_limit.max" );
+					|| optimizerCfg.containsKey( "transaction_limit.max" );
 			OptimizerStrategy optimizerStrategy;
 			if ( incremental ) {
 				optimizerStrategy = new IncrementalOptimizerStrategy();
@@ -139,6 +152,7 @@ public class CommonPropertiesParse {
 	/**
 	 * @param directoryBasedIndexManager
 	 * @param cfg
+	 *
 	 * @return
 	 */
 	public static DirectoryBasedReaderProvider createDirectoryBasedReaderProvider(DirectoryBasedIndexManager indexManager, Properties cfg) {

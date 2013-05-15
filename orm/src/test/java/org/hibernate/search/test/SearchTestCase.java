@@ -41,7 +41,6 @@ import org.junit.Before;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
@@ -56,6 +55,7 @@ import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.test.fwk.SkipLog;
 import org.hibernate.search.util.impl.ContextHelper;
 import org.hibernate.search.util.impl.FileHelper;
+import org.hibernate.search.util.impl.StringHelper;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
 import org.hibernate.testing.FailureExpected;
@@ -263,7 +263,7 @@ public abstract class SearchTestCase extends TestCase {
 		}
 		catch ( Exception e ) {
 			e.printStackTrace();
-			throw new RuntimeException(  e );
+			throw new RuntimeException( e );
 		}
 	}
 
@@ -424,7 +424,7 @@ public abstract class SearchTestCase extends TestCase {
 		}
 	}
 
-		public String fullTestName() {
+	public String fullTestName() {
 		return this.getClass().getName() + "#" + this.getName();
 	}
 

@@ -24,12 +24,13 @@
 
 package org.hibernate.search.engine.impl;
 
+import java.lang.annotation.Annotation;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Field;
 
-import org.hibernate.annotations.common.AssertionFailure;
+import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.annotations.common.reflection.XProperty;
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.Boost;
@@ -42,8 +43,7 @@ import org.hibernate.search.annotations.TermVector;
 import org.hibernate.search.engine.BoostStrategy;
 import org.hibernate.search.impl.ConfigContext;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
-
-import java.lang.annotation.Annotation;
+import org.hibernate.search.util.impl.StringHelper;
 
 /**
  * A helper classes dealing with the processing of annotation. It is there to share some annotation processing
@@ -60,6 +60,7 @@ public final class AnnotationProcessingHelper {
 	 * @param index is the field indexed or not
 	 * @param analyze should the field be analyzed
 	 * @param norms are norms to be added to index
+	 *
 	 * @return Returns the Lucene {@link org.apache.lucene.document.Field.Index} value for a given field
 	 */
 	public static Field.Index getIndex(Index index, Analyze analyze, Norms norms) {

@@ -1,7 +1,7 @@
 /*
  * Hibernate, Relational Persistence for Idiomatic Java
  *
- * Copyright (c) 2010, Red Hat, Inc. and/or its affiliates or third-party contributors as
+ * Copyright (c) 2013, Red Hat, Inc. and/or its affiliates or third-party contributors as
  * indicated by the @author tags or express copyright attribution
  * statements applied by the authors.  All third-party contributions are
  * distributed under license by Red Hat, Inc.
@@ -21,28 +21,29 @@
  * 51 Franklin Street, Fifth Floor
  * Boston, MA  02110-1301  USA
  */
-package org.hibernate.search.bridge.builtin;
 
-import org.hibernate.search.bridge.TwoWayStringBridge;
-import org.hibernate.search.util.impl.StringHelper;
+package org.hibernate.search.util.impl;
+
+import org.hibernate.annotations.common.util.impl.Log;
+import org.hibernate.annotations.common.util.impl.LoggerFactory;
 
 /**
- * Map a boolean field
+ * Indicates failure of an assertion: a possible bug in Hibernate.
  *
- * @author Sylvain Vieujot
+ * @author Gavin King
+ * @author Emmanuel Bernard
  */
-public class BooleanBridge implements TwoWayStringBridge {
+public class AssertionFailure extends RuntimeException {
 
-	public Boolean stringToObject(String stringValue) {
-		if ( StringHelper.isEmpty( stringValue ) ) {
-			return null;
-		}
-		return Boolean.valueOf( stringValue );
+	private static final Log log = LoggerFactory.make( AssertionFailure.class.getName() );
+
+	public AssertionFailure(String s) {
+		super( s );
+		log.assertionFailure( this );
 	}
 
-	public String objectToString(Object object) {
-		return object == null ?
-				null :
-				object.toString();
+	public AssertionFailure(String s, Throwable t) {
+		super( s, t );
+		log.assertionFailure( this );
 	}
 }

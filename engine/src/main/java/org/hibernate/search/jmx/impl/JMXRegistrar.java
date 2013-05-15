@@ -28,8 +28,8 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.search.SearchException;
+import org.hibernate.search.util.impl.StringHelper;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
 
@@ -77,8 +77,7 @@ public final class JMXRegistrar {
 	 *
 	 * @param name The name of the bean to unregister. The {@code name} cannot be {@code null}
 	 *
-	 * @throws java.lang.IllegalArgumentException
-	 *          In case the object name is {@code null}
+	 * @throws java.lang.IllegalArgumentException In case the object name is {@code null}
 	 */
 	public static void unRegisterMBean(String name) {
 		if ( name == null ) {
@@ -103,8 +102,7 @@ public final class JMXRegistrar {
 	 *
 	 * @return {@code true} is there is a bean registered under the given name, {@code false} otherwise.
 	 *
-	 * @throws java.lang.IllegalArgumentException
-	 *          In case the object name is {@code null}
+	 * @throws java.lang.IllegalArgumentException In case the object name is {@code null}
 	 */
 	public static boolean isNameRegistered(String name) {
 		if ( name == null ) {

@@ -34,7 +34,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
-import org.hibernate.annotations.common.AssertionFailure;
+import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.engine.spi.DocumentBuilderIndexedEntity;
 import org.hibernate.search.engine.spi.EntityIndexBinder;

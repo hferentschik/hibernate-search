@@ -32,7 +32,7 @@ import java.util.Set;
 
 import org.hibernate.Criteria;
 import org.hibernate.Session;
-import org.hibernate.annotations.common.AssertionFailure;
+import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.search.engine.spi.EntityIndexBinder;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
 import org.hibernate.search.query.engine.spi.EntityInfo;

@@ -23,9 +23,9 @@
  */
 package org.hibernate.search.bridge.builtin;
 
-import org.hibernate.annotations.common.util.StringHelper;
 import org.hibernate.search.bridge.AppliedOnTypeAwareBridge;
 import org.hibernate.search.bridge.TwoWayStringBridge;
+import org.hibernate.search.util.impl.StringHelper;
 
 
 /**
@@ -51,7 +51,7 @@ public class EnumBridge implements TwoWayStringBridge, AppliedOnTypeAwareBridge 
 
 	public void setAppliedOnType(Class<?> returnType) {
 		@SuppressWarnings("unchecked") //only called for an enum
-		Class<? extends Enum> enumReturnType = (Class<? extends Enum>) returnType;
+				Class<? extends Enum> enumReturnType = (Class<? extends Enum>) returnType;
 		this.clazz = enumReturnType;
 	}
 }

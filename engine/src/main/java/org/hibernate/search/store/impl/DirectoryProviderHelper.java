@@ -45,13 +45,14 @@ import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.store.SimpleFSLockFactory;
 import org.apache.lucene.store.SingleInstanceLockFactory;
 import org.apache.lucene.util.Version;
-import org.hibernate.annotations.common.util.StringHelper;
+
 import org.hibernate.search.Environment;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.store.LockFactoryProvider;
 import org.hibernate.search.util.configuration.impl.ConfigurationParseHelper;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
 import org.hibernate.search.util.impl.FileHelper;
+import org.hibernate.search.util.impl.StringHelper;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
 
@@ -83,6 +84,7 @@ public final class DirectoryProviderHelper {
 	 * @param indexName the name of the index (directory) to create
 	 * @param properties the configuration properties
 	 * @param needWritePermissions when true the directory will be tested for read-write permissions.
+	 *
 	 * @return The file representing the source directory
 	 */
 	public static File getSourceDirectory(String indexName, Properties properties, boolean needWritePermissions) {
@@ -96,7 +98,7 @@ public final class DirectoryProviderHelper {
 							" and " +
 							RELATIVE_INDEX_PROP_NAME + " " +
 							( relative != null ? relative : "<null>" )
-					);
+			);
 		}
 		if ( relative == null ) {
 			relative = indexName;
@@ -125,7 +127,9 @@ public final class DirectoryProviderHelper {
 	 *
 	 * @param indexDir the directory where to write a new index
 	 * @param properties the configuration properties
+	 *
 	 * @return the created {@code FSDirectory} instance
+	 *
 	 * @throws java.io.IOException if an error
 	 */
 	public static FSDirectory createFSIndex(File indexDir, Properties properties) throws IOException {
@@ -145,20 +149,24 @@ public final class DirectoryProviderHelper {
 	 * Initialize the Lucene Directory if it isn't already.
 	 *
 	 * @param directory the Directory to initialize
+	 *
 	 * @throws SearchException in case of lock acquisition timeouts, IOException, or if a corrupt index is found
 	 */
 	public static void initializeIndexIfNeeded(Directory directory) {
 		//version doesn't really matter as we won't use the Analyzer
-		Version version =  Environment.DEFAULT_LUCENE_MATCH_VERSION;
+		Version version = Environment.DEFAULT_LUCENE_MATCH_VERSION;
 		SimpleAnalyzer analyzer = new SimpleAnalyzer( version );
 		try {
-			if ( ! IndexReader.indexExists( directory ) ) {
-				IndexWriterConfig iwriterConfig = new IndexWriterConfig( version, analyzer ).setOpenMode( OpenMode.CREATE );
+			if ( !IndexReader.indexExists( directory ) ) {
+				IndexWriterConfig iwriterConfig = new IndexWriterConfig(
+						version,
+						analyzer
+				).setOpenMode( OpenMode.CREATE );
 				IndexWriter iw = new IndexWriter( directory, iwriterConfig );
 				iw.close();
 			}
 		}
-		catch (IOException e) {
+		catch ( IOException e ) {
 			throw new SearchException( "Could not initialize index", e );
 		}
 		finally {
@@ -175,8 +183,10 @@ public final class DirectoryProviderHelper {
 	 *
 	 * @param indexDir the directory to use to store locks, if needed by implementation
 	 * @param dirConfiguration the configuration of current DirectoryProvider
+	 *
 	 * @return the LockFactory as configured, or a SimpleFSLockFactory
 	 *         in case of configuration errors or as a default.
+	 *
 	 * @throws IOException if any.
 	 */
 	public static LockFactory createLockFactory(File indexDir, Properties dirConfiguration) {
@@ -227,7 +237,9 @@ public final class DirectoryProviderHelper {
 	 * @param annotatedIndexName The index name declared on the @Indexed annotation
 	 * @param properties The properties may override the indexname.
 	 * @param verifyIsWritable Verify the directory is writable
+	 *
 	 * @return the File representing the Index Directory
+	 *
 	 * @throws SearchException if any.
 	 */
 	public static File getVerifiedIndexDir(String annotatedIndexName, Properties properties, boolean verifyIsWritable) {
@@ -282,11 +294,16 @@ public final class DirectoryProviderHelper {
 	/**
 	 * @param properties the configuration of the DirectoryProvider
 	 * @param directoryProviderName the name of the DirectoryProvider, used for error reporting
+	 *
 	 * @return The period in milliseconds to keep retrying initialization of a DirectoryProvider
 	 */
 	static long getRetryInitializePeriod(Properties properties, String directoryProviderName) {
 		int retry_period_seconds = ConfigurationParseHelper.getIntValue( properties, RETRY_INITIALIZE_PROP_NAME, 0 );
-		log.debugf( "Retry initialize period for Directory %s: %d seconds", directoryProviderName, retry_period_seconds );
+		log.debugf(
+				"Retry initialize period for Directory %s: %d seconds",
+				directoryProviderName,
+				retry_period_seconds
+		);
 		if ( retry_period_seconds < 0 ) {
 			throw new SearchException( RETRY_INITIALIZE_PROP_NAME + " for Directory " + directoryProviderName + " must be a positive integer" );
 		}
@@ -315,6 +332,7 @@ public final class DirectoryProviderHelper {
 	 *
 	 * @param indexName the index name
 	 * @param properties the configuration properties
+	 *
 	 * @return the number of Bytes to use as "chunk size" in file copy operations.
 	 */
 	public static long getCopyBufferSize(String indexName, Properties properties) {
