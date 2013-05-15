@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
-import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.search.cfg.SearchMapping;
 import org.hibernate.search.cfg.spi.IndexManagerFactory;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
@@ -41,20 +40,15 @@ import org.hibernate.search.spi.ServiceProvider;
  * @since 4.1
  */
 public final class ReflectionReplacingSearchConfiguration implements SearchConfiguration {
-
-	private final ReflectionManager reflectionManager;
 	private final SearchConfiguration cfg;
 
 	/**
 	 * Create a new SearchConfiguration which returns the same values as the provided SearchConfiguration
-	 * instance, with the exception of {@link #getReflectionManager()} which will return the constructor
-	 * defined ReflectionManager.
+	 * instance.
 	 *
-	 * @param reflectionManager
 	 * @param cfg
 	 */
-	public ReflectionReplacingSearchConfiguration(ReflectionManager reflectionManager, SearchConfiguration cfg) {
-		this.reflectionManager = reflectionManager;
+	public ReflectionReplacingSearchConfiguration(SearchConfiguration cfg) {
 		this.cfg = cfg;
 	}
 
@@ -76,11 +70,6 @@ public final class ReflectionReplacingSearchConfiguration implements SearchConfi
 	@Override
 	public Properties getProperties() {
 		return cfg.getProperties();
-	}
-
-	@Override
-	public ReflectionManager getReflectionManager() {
-		return reflectionManager;
 	}
 
 	@Override

@@ -25,12 +25,11 @@
 package org.hibernate.search.engine.impl;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Member;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Field;
 
-import org.hibernate.search.util.impl.AssertionFailure;
-import org.hibernate.annotations.common.reflection.XProperty;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.Boost;
@@ -42,7 +41,9 @@ import org.hibernate.search.annotations.Spatial;
 import org.hibernate.search.annotations.TermVector;
 import org.hibernate.search.engine.BoostStrategy;
 import org.hibernate.search.impl.ConfigContext;
+import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
+import org.hibernate.search.util.impl.ReflectionHelper;
 import org.hibernate.search.util.impl.StringHelper;
 
 /**
@@ -87,9 +88,9 @@ public final class AnnotationProcessingHelper {
 		}
 	}
 
-	public static Float getBoost(XProperty member, Annotation fieldAnn) {
+	public static Float getBoost(Member member, Annotation fieldAnn) {
 		float computedBoost = 1.0f;
-		Boost boostAnn = member.getAnnotation( Boost.class );
+		Boost boostAnn = ReflectionHelper.getAnnotation( member, Boost.class );
 		if ( boostAnn != null ) {
 			computedBoost = boostAnn.value();
 		}
@@ -110,8 +111,8 @@ public final class AnnotationProcessingHelper {
 		return computedBoost;
 	}
 
-	public static BoostStrategy getDynamicBoost(XProperty member) {
-		DynamicBoost boostAnnotation = member.getAnnotation( DynamicBoost.class );
+	public static BoostStrategy getDynamicBoost(Member member) {
+		DynamicBoost boostAnnotation = ReflectionHelper.getAnnotation( member, DynamicBoost.class );
 		if ( boostAnnotation == null ) {
 			return DefaultBoostStrategy.INSTANCE;
 		}

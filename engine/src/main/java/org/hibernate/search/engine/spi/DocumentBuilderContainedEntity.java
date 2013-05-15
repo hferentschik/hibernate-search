@@ -24,12 +24,10 @@
 package org.hibernate.search.engine.spi;
 
 import java.io.Serializable;
+import java.lang.reflect.Member;
 import java.util.List;
 import java.util.Set;
 
-import org.hibernate.annotations.common.reflection.ReflectionManager;
-import org.hibernate.annotations.common.reflection.XClass;
-import org.hibernate.annotations.common.reflection.XProperty;
 import org.hibernate.search.backend.LuceneWork;
 import org.hibernate.search.bridge.spi.ConversionContext;
 import org.hibernate.search.impl.ConfigContext;
@@ -49,22 +47,23 @@ public class DocumentBuilderContainedEntity<T> extends AbstractDocumentBuilder<T
 	/**
 	 * Constructor used on contained entities not annotated with {@code @Indexed} themselves.
 	 *
-	 * @param xClass The class for which to build a {@code DocumentBuilderContainedEntity}.
+	 * @param clazz The class for which to build a {@code DocumentBuilderContainedEntity}.
 	 * @param context Handle to default configuration settings.
-	 * @param reflectionManager Reflection manager to use for processing the annotations.
 	 * @param optimizationBlackList mutable register, keeps track of types on which we need to disable collection events optimizations
 	 * @param instanceInitializer a {@link org.hibernate.search.spi.InstanceInitializer} object.
 	 */
-	public DocumentBuilderContainedEntity(XClass xClass, ConfigContext context,
-			ReflectionManager reflectionManager, Set<XClass> optimizationBlackList, InstanceInitializer instanceInitializer) {
-		super( xClass, context, null, reflectionManager, optimizationBlackList, instanceInitializer );
+	public DocumentBuilderContainedEntity(Class<?> clazz,
+										  ConfigContext context,
+		                                  Set<Class<?>> optimizationBlackList,
+										  InstanceInitializer instanceInitializer) {
+		super( clazz, context, null, optimizationBlackList, instanceInitializer );
 		//done after init:
 		if ( metadata.containedInGetters.size() == 0 ) {
 			this.entityState = EntityState.NON_INDEXABLE;
 		}
 	}
 
-	protected void documentBuilderSpecificChecks(XProperty member, PropertiesMetadata propertiesMetadata, boolean isRoot, String prefix, ConfigContext context, PathsContext pathsContext) {
+	protected void documentBuilderSpecificChecks(Member member, PropertiesMetadata propertiesMetadata, boolean isRoot, String prefix, ConfigContext context, PathsContext pathsContext) {
 	}
 
 	@Override

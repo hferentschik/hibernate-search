@@ -31,11 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.hibernate.annotations.common.reflection.ReflectionManager;
-import org.hibernate.annotations.common.reflection.java.JavaReflectionManager;
+import org.hibernate.search.cfg.SearchMapping;
 import org.hibernate.search.cfg.spi.IndexManagerFactory;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
-import org.hibernate.search.cfg.SearchMapping;
 import org.hibernate.search.spi.InstanceInitializer;
 import org.hibernate.search.spi.ServiceProvider;
 import org.hibernate.search.spi.internals.SearchFactoryState;
@@ -48,7 +46,6 @@ public class IncrementalSearchConfiguration implements SearchConfiguration {
 	private final Map<String, Class<?>> classesByName = new HashMap<String, Class<?>>();
 	private final SearchFactoryState state;
 	private final Properties properties;
-	private final ReflectionManager reflectionManager = new JavaReflectionManager();
 
 	public IncrementalSearchConfiguration(List<Class<?>> classes, Properties properties, SearchFactoryState factoryState) {
 		this.properties = properties;
@@ -73,10 +70,6 @@ public class IncrementalSearchConfiguration implements SearchConfiguration {
 
 	public Properties getProperties() {
 		return properties;
-	}
-
-	public ReflectionManager getReflectionManager() {
-		return reflectionManager;
 	}
 
 	public SearchMapping getProgrammaticMapping() {

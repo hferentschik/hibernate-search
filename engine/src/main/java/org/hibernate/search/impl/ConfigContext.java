@@ -23,6 +23,8 @@
  */
 package org.hibernate.search.impl;
 
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,10 +38,6 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.search.Similarity;
 import org.apache.lucene.util.Version;
 
-import org.hibernate.annotations.common.reflection.XAnnotatedElement;
-import org.hibernate.annotations.common.reflection.XClass;
-import org.hibernate.annotations.common.reflection.XMember;
-import org.hibernate.annotations.common.reflection.XPackage;
 import org.hibernate.search.Environment;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.annotations.AnalyzerDef;
@@ -51,9 +49,9 @@ import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
 
 /**
- * Provides access to some default configuration settings (eg default {@code Analyzer} or default
- * {@code Similarity}) and checks whether certain optional libraries are available.
- *
+ * Provides access to some default configuration settings (eg default {@code Analyzer} or default {@code Similarity})
+ * and checks whether certain optional libraries are available.
+ * 
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  */
@@ -73,9 +71,9 @@ public final class ConfigContext {
 	private static final String PROGRAMMATIC_ANALYZER_DEFINITION = "PROGRAMMATIC_ANALYZER_DEFINITION";
 
 	/**
-	 * Used to keep track of duplicated analyzer definitions. The key of the map is the analyzer definition
-	 * name and the value is a string defining the location of the definition. In most cases the fully specified class
-	 * name together with the annotated element name is used. See also {@link #PROGRAMMATIC_ANALYZER_DEFINITION}.
+	 * Used to keep track of duplicated analyzer definitions. The key of the map is the analyzer definition name and the
+	 * value is a string defining the location of the definition. In most cases the fully specified class name together
+	 * with the annotated element name is used. See also {@link #PROGRAMMATIC_ANALYZER_DEFINITION}.
 	 */
 	private final Map<String, String> analyzerDefinitionPoints = new HashMap<String, String>();
 
@@ -112,11 +110,11 @@ public final class ConfigContext {
 
 	/**
 	 * Add an analyzer definition which was defined as annotation.
-	 *
+	 * 
 	 * @param analyzerDef the analyzer definition annotation
 	 * @param annotatedElement the annotated element it was defined on
 	 */
-	public void addAnalyzerDef(AnalyzerDef analyzerDef, XAnnotatedElement annotatedElement) {
+	public void addAnalyzerDef(AnalyzerDef analyzerDef, AnnotatedElement annotatedElement) {
 		if ( analyzerDef == null ) {
 			return;
 		}
@@ -125,7 +123,7 @@ public final class ConfigContext {
 
 	/**
 	 * Add a facet field name.
-	 *
+	 * 
 	 * @param facetFieldName the name of the faceted field
 	 */
 	public void addFacetFieldName(String facetFieldName) {
@@ -166,9 +164,8 @@ public final class ConfigContext {
 
 	/**
 	 * Initializes the Lucene analyzer to use by reading the analyzer class from the configuration and instantiating it.
-	 *
+	 * 
 	 * @param cfg The current configuration.
-	 *
 	 * @return The Lucene analyzer to use for tokenization.
 	 */
 	private Analyzer initAnalyzer(SearchConfiguration cfg) {
@@ -179,7 +176,7 @@ public final class ConfigContext {
 				// Use the same class loader used to load the SearchConfiguration implementation class ...
 				analyzerClass = ClassLoaderHelper.classForName( analyzerClassName, cfg.getClass().getClassLoader() );
 			}
-			catch ( Exception e ) {
+			catch (Exception e) {
 				return buildLazyAnalyzer( analyzerClassName );
 			}
 		}
@@ -191,9 +188,8 @@ public final class ConfigContext {
 
 	/**
 	 * Initializes the Lucene similarity to use.
-	 *
+	 * 
 	 * @param cfg the search configuration.
-	 *
 	 * @return returns the default similarity class.
 	 */
 	private Similarity initSimilarity(SearchConfiguration cfg) {
@@ -203,9 +199,7 @@ public final class ConfigContext {
 			defaultSimilarity = Similarity.getDefault();
 		}
 		else {
-			defaultSimilarity = ClassLoaderHelper.instanceFromName(
-					Similarity.class, similarityClassName, ConfigContext.class, "default similarity"
-			);
+			defaultSimilarity = ClassLoaderHelper.instanceFromName( Similarity.class, similarityClassName, ConfigContext.class, "default similarity" );
 		}
 		log.debugf( "Using default similarity implementation: %s", defaultSimilarity.getClass().getName() );
 		return defaultSimilarity;
@@ -255,7 +249,7 @@ public final class ConfigContext {
 			}
 		}
 
-		//initialize the remaining definitions
+		// initialize the remaining definitions
 		for ( Map.Entry<String, AnalyzerDef> entry : analyzerDefs.entrySet() ) {
 			if ( !initializedAnalyzers.containsKey( entry.getKey() ) ) {
 				final Analyzer analyzer = buildAnalyzer( entry.getValue() );
@@ -267,9 +261,7 @@ public final class ConfigContext {
 
 	private Analyzer buildAnalyzer(AnalyzerDef analyzerDef) {
 		if ( !solrPresent ) {
-			throw new SearchException(
-					"Use of @AnalyzerDef while Solr is not present in the classpath. Add apache-solr-analyzer.jar"
-			);
+			throw new SearchException( "Use of @AnalyzerDef while Solr is not present in the classpath. Add apache-solr-analyzer.jar" );
 		}
 
 		// SolrAnalyzerBuilder references Solr classes.
@@ -289,7 +281,7 @@ public final class ConfigContext {
 			ClassLoaderHelper.classForName( className, ConfigContext.class.getClassLoader() );
 			return true;
 		}
-		catch ( Exception e ) {
+		catch (Exception e) {
 			return false;
 		}
 	}
@@ -308,7 +300,7 @@ public final class ConfigContext {
 					log.debug( "Setting Lucene compatibility to Version " + version.name() );
 				}
 			}
-			catch ( IllegalArgumentException e ) {
+			catch (IllegalArgumentException e) {
 				StringBuilder msg = new StringBuilder( tmp );
 				msg.append( " is a invalid value for the Lucene match version. Possible values are: " );
 				for ( Version v : Version.values() ) {
@@ -324,23 +316,23 @@ public final class ConfigContext {
 
 	/**
 	 * @param annotatedElement an annotated element
-	 *
-	 * @return a string which identifies the location/point the annotation was placed on. Something of the
-	 *         form package.[[className].[field|member]]
+	 * @return a string which identifies the location/point the annotation was placed on. Something of the form
+	 * package.[[className].[field|member]]
 	 */
-	private String buildAnnotationDefinitionPoint(XAnnotatedElement annotatedElement) {
-		if ( annotatedElement instanceof XClass ) {
-			return ( (XClass) annotatedElement ).getName();
+	private String buildAnnotationDefinitionPoint(AnnotatedElement annotatedElement) {
+		if ( annotatedElement instanceof Class ) {
+			return ( (Class<?>) annotatedElement ).getName();
 		}
-		else if ( annotatedElement instanceof XMember ) {
-			XMember member = (XMember) annotatedElement;
-			return member.getType().getName() + '.' + member.getName();
+		else if ( annotatedElement instanceof Member ) {
+			Member member = (Member) annotatedElement;
+			return null;
+			// return member.getType().getName() + '.' + member.getName();
 		}
-		else if ( annotatedElement instanceof XPackage ) {
-			return ( (XPackage) annotatedElement ).getName();
+		else if ( annotatedElement instanceof Package ) {
+			return ( (Package) annotatedElement ).getName();
 		}
 		else {
-			throw new SearchException( "Unknown XAnnoatedElement: " + annotatedElement );
+			throw new SearchException( "Unknown annotated element: " + annotatedElement );
 		}
 	}
 

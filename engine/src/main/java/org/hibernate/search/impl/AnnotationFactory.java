@@ -20,9 +20,6 @@
  */
 package org.hibernate.search.impl;
 
-import org.hibernate.annotations.common.annotationfactory.AnnotationDescriptor;
-import org.hibernate.annotations.common.annotationfactory.AnnotationProxy;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;

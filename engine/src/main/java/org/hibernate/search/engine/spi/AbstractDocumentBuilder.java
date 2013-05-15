@@ -25,7 +25,9 @@ package org.hibernate.search.engine.spi;
 
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,13 +45,6 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.search.Similarity;
 import org.apache.lucene.util.Version;
 
-import org.hibernate.search.util.impl.AssertionFailure;
-import org.hibernate.annotations.common.reflection.ReflectionManager;
-import org.hibernate.annotations.common.reflection.XAnnotatedElement;
-import org.hibernate.annotations.common.reflection.XClass;
-import org.hibernate.annotations.common.reflection.XMember;
-import org.hibernate.annotations.common.reflection.XProperty;
-import org.hibernate.search.util.impl.StringHelper;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.analyzer.Discriminator;
 import org.hibernate.search.annotations.Analyze;
@@ -90,10 +85,12 @@ import org.hibernate.search.engine.impl.WorkPlan;
 import org.hibernate.search.impl.ConfigContext;
 import org.hibernate.search.spatial.Coordinates;
 import org.hibernate.search.spi.InstanceInitializer;
+import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
 import org.hibernate.search.util.impl.PassThroughAnalyzer;
 import org.hibernate.search.util.impl.ReflectionHelper;
 import org.hibernate.search.util.impl.ScopedAnalyzer;
+import org.hibernate.search.util.impl.StringHelper;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
 
@@ -117,7 +114,7 @@ public abstract class AbstractDocumentBuilder<T> {
 	private static final StringBridge NULL_EMBEDDED_STRING_BRIDGE = new DefaultStringBridge();
 	private static final String EMPTY = "";
 
-	private final XClass beanXClass;
+	private final Class<?> beanXClass;
 	protected final String beanXClassName;
 	protected final Class<?> beanClass;
 	protected final InstanceInitializer instanceInitializer;
@@ -131,28 +128,29 @@ public abstract class AbstractDocumentBuilder<T> {
 	protected final Set<String> fieldCollectionRoles = new TreeSet<String>();
 	protected final Set<String> indexedEmbeddedCollectionRoles = new TreeSet<String>();
 	protected final Set<String> containedInCollectionRoles = new TreeSet<String>();
-	protected final Set<String> spatialNames = new TreeSet<String>( );
+	protected final Set<String> spatialNames = new TreeSet<String>();
 
 	protected final PropertiesMetadata metadata = new PropertiesMetadata();
 	protected EntityState entityState;
-	protected ReflectionManager reflectionManager; //available only during initialization and post-initialization
 
 	private boolean stateInspectionOptimizationsEnabled = true;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param xClass The class for which to build a document builder
+	 * @param clazz The class for which to build a document builder
 	 * @param context Handle to default configuration settings
 	 * @param similarity The index level similarity
-	 * @param reflectionManager Reflection manager to use for processing the annotations
 	 * @param optimizationBlackList keeps track of types on which we need to disable collection events optimizations
 	 * @param instanceInitializer a {@link org.hibernate.search.spi.InstanceInitializer} object.
 	 */
-	public AbstractDocumentBuilder(XClass xClass, ConfigContext context, Similarity similarity,
-			ReflectionManager reflectionManager, Set<XClass> optimizationBlackList, InstanceInitializer instanceInitializer) {
+	public AbstractDocumentBuilder(Class clazz,
+								   ConfigContext context,
+								   Similarity similarity,
+								   Set<Class<?>> optimizationBlackList,
+								   InstanceInitializer instanceInitializer) {
 
-		if ( xClass == null ) {
+		if ( clazz == null ) {
 			throw new AssertionFailure( "Unable to build a DocumentBuilderContainedEntity with a null class" );
 		}
 		final Version luceneVersion = context.getLuceneMatchVersion();
@@ -160,19 +158,18 @@ public abstract class AbstractDocumentBuilder<T> {
 		this.passThroughAnalyzer = new PassThroughAnalyzer( luceneVersion );
 		this.instanceInitializer = instanceInitializer;
 		this.entityState = EntityState.CONTAINED_IN_ONLY;
-		this.beanXClass = xClass;
-		this.beanXClassName = xClass.getName();
-		this.reflectionManager = reflectionManager;
-		this.beanClass = reflectionManager.toClass( xClass );
+		this.beanXClass = clazz;
+		this.beanXClassName = clazz.getName();
+		this.beanClass = clazz;
 		this.similarity = similarity; //set the index similarity before the class level one to detect conflict
 
-		metadata.boost = getBoost( xClass );
-		metadata.classBoostStrategy = getDynamicBoost( xClass );
+		metadata.boost = getBoost( clazz );
+		metadata.classBoostStrategy = getDynamicBoost( clazz );
 		metadata.analyzer = context.getDefaultAnalyzer();
 
-		Set<XClass> processedClasses = new HashSet<XClass>();
-		processedClasses.add( xClass );
-		initializeClass( xClass, metadata, true, "", processedClasses, context, optimizationBlackList, false, null );
+		Set<Class<?>> processedClasses = new HashSet<Class<?>>();
+		processedClasses.add( clazz );
+		initializeClass( clazz, metadata, true, "", processedClasses, context, optimizationBlackList, false, null );
 
 		this.analyzer.setGlobalAnalyzer( metadata.analyzer );
 
@@ -182,9 +179,20 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	public abstract void addWorkToQueue(Class<T> entityClass, T entity, Serializable id, boolean delete, boolean add, List<LuceneWork> queue, ConversionContext contextualBridge);
+	public abstract void addWorkToQueue(Class<T> entityClass,
+										T entity,
+										Serializable id,
+										boolean delete,
+										boolean add,
+										List<LuceneWork> queue,
+										ConversionContext contextualBridge);
 
-	protected abstract void documentBuilderSpecificChecks(XProperty member, PropertiesMetadata propertiesMetadata, boolean isRoot, String prefix, ConfigContext context, PathsContext pathsContext);
+	protected abstract void documentBuilderSpecificChecks(Member member,
+														  PropertiesMetadata propertiesMetadata,
+														  boolean isRoot,
+														  String prefix,
+														  ConfigContext context,
+														  PathsContext pathsContext);
 
 	/**
 	 * In case of an indexed entity, return the value of it's identifier: what is marked as @Id or @DocumentId;
@@ -204,10 +212,6 @@ public abstract class AbstractDocumentBuilder<T> {
 
 	public Class<?> getBeanClass() {
 		return beanClass;
-	}
-
-	public XClass getBeanXClass() {
-		return beanXClass;
 	}
 
 	public PropertiesMetadata getMetadata() {
@@ -254,7 +258,6 @@ public abstract class AbstractDocumentBuilder<T> {
 			}
 			superClass = superClass.getSuperclass();
 		}
-		this.reflectionManager = null;
 	}
 
 	protected void addToScopedAnalyzer(String fieldName, Analyzer analyzer, Field.Index index) {
@@ -278,7 +281,7 @@ public abstract class AbstractDocumentBuilder<T> {
 	 */
 	public void appendContainedInWorkForInstance(Object instance, WorkPlan workplan, DepthValidator currentDepth) {
 		for ( int i = 0; i < metadata.containedInGetters.size(); i++ ) {
-			XMember member = metadata.containedInGetters.get( i );
+			Member member = metadata.containedInGetters.get( i );
 			Object unproxiedInstance = instanceInitializer.unproxy( instance );
 
 			DepthValidator depth = updateDepth( unproxiedInstance, member, currentDepth );
@@ -294,14 +297,14 @@ public abstract class AbstractDocumentBuilder<T> {
 				continue;
 			}
 
-			if ( member.isArray() ) {
+			if ( ReflectionHelper.isArray( member ) ) {
 				@SuppressWarnings("unchecked")
 				T[] array = (T[]) value;
 				for ( T arrayValue : array ) {
 					processSingleContainedInInstance( workplan, arrayValue, depth );
 				}
 			}
-			else if ( member.isCollection() ) {
+			else if ( ReflectionHelper.isCollection( member ) ) {
 				Collection<T> collection = null;
 				try {
 					collection = getActualCollection( member, value );
@@ -330,7 +333,7 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private DepthValidator updateDepth(Object instance, XMember member, DepthValidator currentDepth) {
+	private DepthValidator updateDepth(Object instance, Member member, DepthValidator currentDepth) {
 		Integer maxDepth = null;
 		if ( instance != null ) {
 			Map<String, Integer> maxDepths = metadata.containedInDepths;
@@ -361,12 +364,12 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private void initializeClass(XClass clazz, PropertiesMetadata propertiesMetadata, boolean isRoot, String prefix,
-								Set<XClass> processedClasses, ConfigContext context, Set<XClass> optimizationBlackList,
-								boolean disableOptimizationsArg, PathsContext pathsContext) {
-		List<XClass> hierarchy = new LinkedList<XClass>();
-		XClass next;
-		for ( XClass previousClass = clazz; previousClass != null; previousClass = next ) {
+	private void initializeClass(Class<?> clazz, PropertiesMetadata propertiesMetadata, boolean isRoot, String prefix,
+								 Set<Class<?>> processedClasses, ConfigContext context, Set<Class<?>> optimizationBlackList,
+								 boolean disableOptimizationsArg, PathsContext pathsContext) {
+		List<Class<?>> hierarchy = new LinkedList<Class<?>>();
+		Class<?> next;
+		for ( Class<?> previousClass = clazz; previousClass != null; previousClass = next ) {
 			next = previousClass.getSuperclass();
 			if ( next != null ) {
 				hierarchy.add( 0, previousClass ); // append to head to create a list in top-down iteration order
@@ -374,7 +377,7 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 
 		// Iterate the class hierarchy top down. This allows to override the default analyzer for the properties if the class holds one
-		for ( XClass currentClass : hierarchy ) {
+		for ( Class<?> currentClass : hierarchy ) {
 			initializeClassLevelAnnotations( currentClass, propertiesMetadata, isRoot, prefix, context );
 		}
 
@@ -385,11 +388,11 @@ public abstract class AbstractDocumentBuilder<T> {
 		boolean disableOptimizations = disableOptimizationsArg || !stateInspectionOptimizationsEnabled();
 
 		// iterate again for the properties and fields
-		for ( XClass currentClass : hierarchy ) {
+		for ( Class<?> currentClass : hierarchy ) {
 			// rejecting non properties (ie regular methods) because the object is loaded from Hibernate,
 			// so indexing a non property does not make sense
-			List<XProperty> methods = currentClass.getDeclaredProperties( XClass.ACCESS_PROPERTY );
-			for ( XProperty method : methods ) {
+			List<Member> methods = ReflectionHelper.getDeclaredProperties( clazz, ReflectionHelper.Access.GETTER );
+			for ( Member method : methods ) {
 				initializeMemberLevelAnnotations(
 						currentClass,
 						method,
@@ -404,8 +407,8 @@ public abstract class AbstractDocumentBuilder<T> {
 				);
 			}
 
-			List<XProperty> fields = currentClass.getDeclaredProperties( XClass.ACCESS_FIELD );
-			for ( XProperty field : fields ) {
+			List<Member> fields = ReflectionHelper.getDeclaredProperties( clazz, ReflectionHelper.Access.FIELD );
+			for ( Member field : fields ) {
 				initializeMemberLevelAnnotations(
 						currentClass,
 						field,
@@ -432,10 +435,19 @@ public abstract class AbstractDocumentBuilder<T> {
 	 * @param prefix The current prefix used for the <code>Document</code> field names.
 	 * @param context Handle to default configuration settings.
 	 */
-	private void initializeClassLevelAnnotations(XClass clazz, PropertiesMetadata propertiesMetadata, boolean isRoot, String prefix, ConfigContext context) {
+	private void initializeClassLevelAnnotations(Class<?> clazz,
+												 PropertiesMetadata propertiesMetadata,
+												 boolean isRoot,
+												 String prefix,
+												 ConfigContext context) {
 
 		// check for a class level specified analyzer
-		Analyzer analyzer = AnnotationProcessingHelper.getAnalyzer( clazz.getAnnotation( org.hibernate.search.annotations.Analyzer.class ), context );
+		Analyzer analyzer = AnnotationProcessingHelper.getAnalyzer(
+				ReflectionHelper.getAnnotation(
+						clazz,
+						org.hibernate.search.annotations.Analyzer.class
+				), context
+		);
 		if ( analyzer != null ) {
 			propertiesMetadata.analyzer = analyzer;
 		}
@@ -461,13 +473,13 @@ public abstract class AbstractDocumentBuilder<T> {
 		//Check for Spatial annotation on class level
 		Spatial spatialAnn = clazz.getAnnotation( Spatial.class );
 		if ( spatialAnn != null ) {
-			bindSpatialAnnotation( prefix, propertiesMetadata, spatialAnn, clazz, context );
+			bindSpatialAnnotation( prefix, propertiesMetadata, spatialAnn, clazz );
 		}
-		Spatials spatialsAnn = clazz.getAnnotation( Spatials.class );
-		if ( spatialsAnn != null ) {
-			Spatial[] spatials = spatialsAnn.value();
+		Spatials spatialAnnotations = clazz.getAnnotation( Spatials.class );
+		if ( spatialAnnotations != null ) {
+			Spatial[] spatials = spatialAnnotations.value();
 			for ( Spatial spatial : spatials ) {
-				bindSpatialAnnotation( prefix, propertiesMetadata, spatial, clazz, context );
+				bindSpatialAnnotation( prefix, propertiesMetadata, spatial, clazz );
 			}
 		}
 
@@ -479,15 +491,22 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private void initializeMemberLevelAnnotations(XClass classHostingMember, XProperty member, PropertiesMetadata propertiesMetadata, boolean isRoot,
-												String prefix, Set<XClass> processedClasses, ConfigContext context, Set<XClass> optimizationBlackList,
-												boolean disableOptimizations, PathsContext pathsContext) {
+	private void initializeMemberLevelAnnotations(Class<?> classHostingMember,
+												  Member member,
+												  PropertiesMetadata propertiesMetadata,
+												  boolean isRoot,
+												  String prefix,
+												  Set<Class<?>> processedClasses,
+												  ConfigContext context,
+												  Set<Class<?>> optimizationBlackList,
+												  boolean disableOptimizations,
+												  PathsContext pathsContext) {
 		checkForField( classHostingMember, member, propertiesMetadata, prefix, context, pathsContext );
 		checkForFields( classHostingMember, member, propertiesMetadata, prefix, context, pathsContext );
 		checkForSpatial( classHostingMember, member, propertiesMetadata, prefix, context, pathsContext );
 		checkForSpatials( classHostingMember, member, propertiesMetadata, prefix, context, pathsContext );
-		checkForAnalyzerDefs( member, context );
-		checkForAnalyzerDiscriminator( member, propertiesMetadata, context );
+		checkForAnalyzerDefs( (AnnotatedElement) member, context );
+		checkForAnalyzerDiscriminator( (AnnotatedElement) member, propertiesMetadata, context );
 		checkForIndexedEmbedded(
 				classHostingMember,
 				member,
@@ -503,10 +522,10 @@ public abstract class AbstractDocumentBuilder<T> {
 		documentBuilderSpecificChecks( member, propertiesMetadata, isRoot, prefix, context, pathsContext );
 	}
 
-	private void checkForAnalyzerDefs(XAnnotatedElement annotatedElement, ConfigContext context) {
-		AnalyzerDefs defs = annotatedElement.getAnnotation( AnalyzerDefs.class );
-		if ( defs != null ) {
-			for ( AnalyzerDef def : defs.value() ) {
+	private void checkForAnalyzerDefs(AnnotatedElement annotatedElement, ConfigContext context) {
+		AnalyzerDefs analyzerDefsAnnotation = ReflectionHelper.getAnnotation( annotatedElement, AnalyzerDefs.class );
+		if ( analyzerDefsAnnotation != null ) {
+			for ( AnalyzerDef def : analyzerDefsAnnotation.value() ) {
 				context.addAnalyzerDef( def, annotatedElement );
 			}
 		}
@@ -514,7 +533,9 @@ public abstract class AbstractDocumentBuilder<T> {
 		context.addAnalyzerDef( def, annotatedElement );
 	}
 
-	private void checkForAnalyzerDiscriminator(XAnnotatedElement annotatedElement, PropertiesMetadata propertiesMetadata, ConfigContext context) {
+	private void checkForAnalyzerDiscriminator(AnnotatedElement annotatedElement,
+											   PropertiesMetadata propertiesMetadata,
+											   ConfigContext context) {
 		AnalyzerDiscriminator discriminatorAnn = annotatedElement.getAnnotation( AnalyzerDiscriminator.class );
 		if ( discriminatorAnn != null ) {
 			if ( propertiesMetadata.discriminator != null ) {
@@ -523,7 +544,7 @@ public abstract class AbstractDocumentBuilder<T> {
 				);
 			}
 
-			if ( annotatedElement instanceof XProperty && isPropertyTransient( (XProperty)annotatedElement, context ) ) {
+			if ( annotatedElement instanceof Member && isPropertyTransient( (Member) annotatedElement, context ) ) {
 				//if the discriminator is calculated on a @Transient field, we can't trust field level dirtyness
 				forceStateInspectionOptimizationsDisabled();
 			}
@@ -538,15 +559,23 @@ public abstract class AbstractDocumentBuilder<T> {
 				);
 			}
 
-			if ( annotatedElement instanceof XMember ) {
-				propertiesMetadata.discriminatorGetter = (XMember) annotatedElement;
+			if ( annotatedElement instanceof Member ) {
+				propertiesMetadata.discriminatorGetter = (Member) annotatedElement;
 			}
 		}
 	}
 
-	private void checkForFields(XClass classHostingMember, XProperty member, PropertiesMetadata propertiesMetadata, String prefix, ConfigContext context, PathsContext pathsContext) {
-		org.hibernate.search.annotations.Fields fieldsAnn = member.getAnnotation( org.hibernate.search.annotations.Fields.class );
-		NumericFields numericAnns = member.getAnnotation( NumericFields.class );
+	private void checkForFields(Class<?> classHostingMember,
+								Member member,
+								PropertiesMetadata propertiesMetadata,
+								String prefix,
+								ConfigContext context,
+								PathsContext pathsContext) {
+		org.hibernate.search.annotations.Fields fieldsAnn = ReflectionHelper.getAnnotation(
+				member,
+				org.hibernate.search.annotations.Fields.class
+		);
+		NumericFields numericFieldsAnnotation = ReflectionHelper.getAnnotation( member, NumericFields.class );
 		if ( fieldsAnn != null ) {
 			for ( org.hibernate.search.annotations.Field fieldAnn : fieldsAnn.value() ) {
 				if ( isFieldInPath( fieldAnn, member, pathsContext, prefix ) || level <= maxLevel ) {
@@ -556,7 +585,7 @@ public abstract class AbstractDocumentBuilder<T> {
 							propertiesMetadata,
 							prefix,
 							fieldAnn,
-							getNumericExtension( fieldAnn, numericAnns ),
+							getNumericExtension( fieldAnn, numericFieldsAnnotation ),
 							context
 					);
 				}
@@ -576,8 +605,8 @@ public abstract class AbstractDocumentBuilder<T> {
 		return null;
 	}
 
-	private void checkForSimilarity(XClass currClass) {
-		org.hibernate.search.annotations.Similarity similarityAnn = currClass.getAnnotation( org.hibernate.search.annotations.Similarity.class );
+	private void checkForSimilarity(Class<?> clazz) {
+		org.hibernate.search.annotations.Similarity similarityAnn = clazz.getAnnotation( org.hibernate.search.annotations.Similarity.class );
 		if ( similarityAnn != null ) {
 			if ( similarity != null ) {
 				throw new SearchException(
@@ -595,14 +624,29 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private void checkForField(XClass classHostingMember, XProperty member, PropertiesMetadata propertiesMetadata, String prefix, ConfigContext context, PathsContext pathsContext) {
-		org.hibernate.search.annotations.Field fieldAnn =
-				member.getAnnotation( org.hibernate.search.annotations.Field.class );
-		NumericField numericFieldAnn = member.getAnnotation( NumericField.class );
-		DocumentId idAnn = member.getAnnotation( DocumentId.class );
+	private void checkForField(Class<?> classHostingMember,
+							   Member member,
+							   PropertiesMetadata propertiesMetadata,
+							   String prefix,
+							   ConfigContext context,
+							   PathsContext pathsContext) {
+		org.hibernate.search.annotations.Field fieldAnn = ReflectionHelper.getAnnotation(
+				member,
+				org.hibernate.search.annotations.Field.class
+		);
+		NumericField numericFieldAnn = ReflectionHelper.getAnnotation( member, NumericField.class );
+		DocumentId idAnn = ReflectionHelper.getAnnotation( member, DocumentId.class );
 		if ( fieldAnn != null ) {
 			if ( isFieldInPath( fieldAnn, member, pathsContext, prefix ) || level <= maxLevel ) {
-				bindFieldAnnotation( classHostingMember, member, propertiesMetadata, prefix, fieldAnn, numericFieldAnn, context );
+				bindFieldAnnotation(
+						classHostingMember,
+						member,
+						propertiesMetadata,
+						prefix,
+						fieldAnn,
+						numericFieldAnn,
+						context
+				);
 			}
 		}
 		if ( ( fieldAnn == null && idAnn == null ) && numericFieldAnn != null ) {
@@ -610,7 +654,7 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private boolean isPropertyTransient(XProperty member, ConfigContext context) {
+	private boolean isPropertyTransient(Member member, ConfigContext context) {
 		if ( context.isJpaPresent() == false ) {
 			return false;
 		}
@@ -619,8 +663,11 @@ public abstract class AbstractDocumentBuilder<T> {
 			try {
 				@SuppressWarnings("unchecked")
 				Class<? extends Annotation> jpaIdClass =
-						ClassLoaderHelper.classForName( "javax.persistence.Transient", ConfigContext.class.getClassLoader() );
-				transientAnnotation = member.getAnnotation( jpaIdClass );
+						ClassLoaderHelper.classForName(
+								"javax.persistence.Transient",
+								ConfigContext.class.getClassLoader()
+						);
+				transientAnnotation = ReflectionHelper.getAnnotation( member, jpaIdClass );
 			}
 			catch ( ClassNotFoundException e ) {
 				throw new SearchException( "Unable to load @Transient.class even though it should be present ?!" );
@@ -629,10 +676,18 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private void checkForSpatials(XClass classHostingMember, XProperty member, PropertiesMetadata propertiesMetadata, String prefix, ConfigContext context, PathsContext pathsContext) {
-		org.hibernate.search.annotations.Spatials spatialsAnn = member.getAnnotation( org.hibernate.search.annotations.Spatials.class );
-		if ( spatialsAnn != null ) {
-			for ( org.hibernate.search.annotations.Spatial spatial : spatialsAnn.value() ) {
+	private void checkForSpatials(Class<?> classHostingMember,
+								  Member member,
+								  PropertiesMetadata propertiesMetadata,
+								  String prefix,
+								  ConfigContext context,
+								  PathsContext pathsContext) {
+		org.hibernate.search.annotations.Spatials spatialsAnnotation = ReflectionHelper.getAnnotation(
+				member,
+				org.hibernate.search.annotations.Spatials.class
+		);
+		if ( spatialsAnnotation != null ) {
+			for ( org.hibernate.search.annotations.Spatial spatial : spatialsAnnotation.value() ) {
 				if ( isFieldInPath( spatial, member, pathsContext, prefix ) || level <= maxLevel ) {
 					bindSpatialAnnotation(
 							classHostingMember,
@@ -647,8 +702,13 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private void checkForSpatial(XClass classHostingMember, XProperty member, PropertiesMetadata propertiesMetadata, String prefix, ConfigContext context, PathsContext pathsContext) {
-		Spatial spatialAnn = member.getAnnotation( Spatial.class );
+	private void checkForSpatial(Class<?> classHostingMember,
+								 Member member,
+								 PropertiesMetadata propertiesMetadata,
+								 String prefix,
+								 ConfigContext context,
+								 PathsContext pathsContext) {
+		Spatial spatialAnn = ReflectionHelper.getAnnotation( member, Spatial.class );
 		if ( spatialAnn != null ) {
 			if ( isFieldInPath( spatialAnn, member, pathsContext, prefix ) || level <= maxLevel ) {
 				bindSpatialAnnotation( classHostingMember, member, propertiesMetadata, prefix, spatialAnn, context );
@@ -656,8 +716,8 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private boolean isFieldInPath(Annotation fieldAnn, XProperty member,
-			PathsContext pathsContext, String prefix) {
+	private boolean isFieldInPath(Annotation fieldAnn, Member member,
+								  PathsContext pathsContext, String prefix) {
 		if ( pathsContext != null ) {
 			String path = prefix + fieldName( fieldAnn, member );
 			if ( pathsContext.containsPath( path ) ) {
@@ -668,7 +728,7 @@ public abstract class AbstractDocumentBuilder<T> {
 		return false;
 	}
 
-	private String fieldName(Annotation fieldAnn, XProperty member) {
+	private String fieldName(Annotation fieldAnn, Member member) {
 		if ( fieldAnn == null ) {
 			return member.getName();
 		}
@@ -679,10 +739,10 @@ public abstract class AbstractDocumentBuilder<T> {
 		return fieldName;
 	}
 
-	private void checkForContainedIn(XClass classHostingMember, XProperty member, PropertiesMetadata propertiesMetadata) {
-		ContainedIn containedAnn = member.getAnnotation( ContainedIn.class );
+	private void checkForContainedIn(Class<?> classHostingMember, Member member, PropertiesMetadata propertiesMetadata) {
+		ContainedIn containedAnn = ReflectionHelper.getAnnotation( member, ContainedIn.class );
 		if ( containedAnn != null ) {
-			updateContainedInMaxDepths( member, propertiesMetadata);
+			updateContainedInMaxDepths( member, propertiesMetadata );
 			ReflectionHelper.setAccessible( member );
 			propertiesMetadata.containedInGetters.add( member );
 			//collection role in Hibernate is made of the actual hosting class of the member (see HSEARCH-780)
@@ -691,13 +751,13 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private void updateContainedInMaxDepths(XProperty member, PropertiesMetadata propertiesMetadata) {
-		updateContainedInMaxDepth( member, propertiesMetadata, XClass.ACCESS_FIELD );
-		updateContainedInMaxDepth( member, propertiesMetadata, XClass.ACCESS_PROPERTY );
+	private void updateContainedInMaxDepths(Member member, PropertiesMetadata propertiesMetadata) {
+		updateContainedInMaxDepth( member, propertiesMetadata, ReflectionHelper.Access.FIELD );
+		updateContainedInMaxDepth( member, propertiesMetadata, ReflectionHelper.Access.GETTER );
 	}
 
-	private String mappedBy(XMember member) {
-		Annotation[] annotations = member.getAnnotations();
+	private String mappedBy(Member member) {
+		Annotation[] annotations = ReflectionHelper.getAnnotations( member );
 		for ( Annotation annotation : annotations ) {
 			String mappedBy = mappedBy( annotation );
 			if ( StringHelper.isNotEmpty( mappedBy ) ) {
@@ -729,41 +789,42 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private void updateContainedInMaxDepth(XMember memberWithContainedIn, PropertiesMetadata propertiesMetadata, String accessType) {
-		XClass memberReturnedType = memberWithContainedIn.getElementClass();
+	private void updateContainedInMaxDepth(Member memberWithContainedIn,
+										   PropertiesMetadata propertiesMetadata,
+										   ReflectionHelper.Access accessType) {
+		Class<?> memberReturnedType = ReflectionHelper.getElementClass( memberWithContainedIn );
 		String mappedBy = mappedBy( memberWithContainedIn );
-		List<XProperty> returnedTypeProperties = memberReturnedType.getDeclaredProperties( accessType );
-		for ( XProperty property : returnedTypeProperties ) {
+		List<Member> returnedTypeProperties = ReflectionHelper.getDeclaredProperties( memberReturnedType, accessType );
+		for ( Member property : returnedTypeProperties ) {
 			if ( isCorrespondingIndexedEmbedded( mappedBy, property ) ) {
-					updateDepthProperties( memberWithContainedIn, propertiesMetadata, memberReturnedType, property );
-					break;
-				}
+				updateDepthProperties( memberWithContainedIn, propertiesMetadata, memberReturnedType, property );
+				break;
 			}
 		}
+	}
 
-	private boolean isCorrespondingIndexedEmbedded(String mappedBy, XProperty property) {
-		if ( !property.isAnnotationPresent( IndexedEmbedded.class ) ) {
+	private boolean isCorrespondingIndexedEmbedded(String mappedBy, Member member) {
+		if ( !ReflectionHelper.isAnnotationPresent( member, IndexedEmbedded.class ) ) {
 			return false;
 		}
 		if ( mappedBy.isEmpty() ) {
 			return true;
 		}
-		if ( mappedBy.equals( property.getName() ) ) {
+		if ( mappedBy.equals( member.getName() ) ) {
 			return true;
 		}
 		return false;
 	}
 
-	private void updateDepthProperties(XMember memberWithContainedIn, PropertiesMetadata propertiesMetadata, XClass memberReturnedType, XProperty property) {
-		int depth = property.getAnnotation( IndexedEmbedded.class ).depth();
+	private void updateDepthProperties(Member memberWithContainedIn,
+									   PropertiesMetadata propertiesMetadata,
+									   Class<?> memberReturnedType,
+									   Member member) {
+		int depth = ReflectionHelper.getAnnotation( member, IndexedEmbedded.class ).depth();
 		propertiesMetadata.containedInDepths.put(
 				depthKey( memberReturnedType, memberWithContainedIn.getName() ),
 				depth
 		);
-	}
-
-	private String depthKey(XClass clazz, String mappedBy) {
-		return key( clazz.getName(), mappedBy );
 	}
 
 	private String depthKey(Class<?> clazz, String mappedBy) {
@@ -774,28 +835,34 @@ public abstract class AbstractDocumentBuilder<T> {
 		return className + "#" + mappedBy;
 	}
 
-	private void checkForIndexedEmbedded(XClass classHostingMember, XProperty member, PropertiesMetadata propertiesMetadata, String prefix,
-										Set<XClass> processedClasses, ConfigContext context, Set<XClass> optimizationBlackList,
-										boolean disableOptimizations, PathsContext pathsContext ) {
-		IndexedEmbedded embeddedAnn = member.getAnnotation( IndexedEmbedded.class );
-		if ( embeddedAnn != null ) {
+	private void checkForIndexedEmbedded(Class<?> classHostingMember,
+										 Member member,
+										 PropertiesMetadata propertiesMetadata,
+										 String prefix,
+										 Set<Class<?>> processedClasses,
+										 ConfigContext context,
+										 Set<Class<?>> optimizationBlackList,
+										 boolean disableOptimizations,
+										 PathsContext pathsContext) {
+		IndexedEmbedded embeddedAnnotation = ReflectionHelper.getAnnotation( member, IndexedEmbedded.class );
+		if ( embeddedAnnotation != null ) {
 			//collection role in Hibernate is made of the actual hosting class of the member (see HSEARCH-780)
 			this.indexedEmbeddedCollectionRoles
 					.add( StringHelper.qualify( classHostingMember.getName(), member.getName() ) );
 			int oldMaxLevel = maxLevel;
-			int potentialLevel = depth( embeddedAnn ) + level;
+			int potentialLevel = depth( embeddedAnnotation ) + level;
 			if ( potentialLevel < 0 ) {
 				potentialLevel = Integer.MAX_VALUE;
 			}
 			maxLevel = potentialLevel > maxLevel ? maxLevel : potentialLevel;
 			level++;
 
-			XClass elementClass;
-			if ( void.class == embeddedAnn.targetElement() ) {
-				elementClass = member.getElementClass();
+			Class<?> elementClass;
+			if ( void.class == embeddedAnnotation.targetElement() ) {
+				elementClass = ReflectionHelper.getElementClass( member );
 			}
 			else {
-				elementClass = reflectionManager.toXClass( embeddedAnn.targetElement() );
+				elementClass = embeddedAnnotation.targetElement();
 			}
 
 			if ( maxLevel == Integer.MAX_VALUE //infinite
@@ -804,12 +871,12 @@ public abstract class AbstractDocumentBuilder<T> {
 						"Circular reference. Duplicate use of "
 								+ elementClass.getName()
 								+ " in root entity " + beanXClass.getName()
-								+ "#" + buildEmbeddedPrefix( prefix, embeddedAnn, member )
+								+ "#" + buildEmbeddedPrefix( prefix, embeddedAnnotation, member )
 				);
 			}
 
-			String localPrefix = buildEmbeddedPrefix( prefix, embeddedAnn, member );
-			PathsContext updatedPathsContext = updatePaths( localPrefix, pathsContext, embeddedAnn );
+			String localPrefix = buildEmbeddedPrefix( prefix, embeddedAnnotation, member );
+			PathsContext updatedPathsContext = updatePaths( localPrefix, pathsContext, embeddedAnnotation );
 
 			boolean pathsCreatedAtThisLevel = false;
 			if ( pathsContext == null && updatedPathsContext != null ) {
@@ -818,7 +885,7 @@ public abstract class AbstractDocumentBuilder<T> {
 				pathsCreatedAtThisLevel = true;
 			}
 
-			if ( level <= maxLevel || isInPath( localPrefix, updatedPathsContext, embeddedAnn ) ) {
+			if ( level <= maxLevel || isInPath( localPrefix, updatedPathsContext, embeddedAnnotation ) ) {
 				processedClasses.add( elementClass ); //push
 
 				ReflectionHelper.setAccessible( member );
@@ -829,7 +896,12 @@ public abstract class AbstractDocumentBuilder<T> {
 				metadata.boost = AnnotationProcessingHelper.getBoost( member, null );
 				//property > entity analyzer
 				Analyzer analyzer = AnnotationProcessingHelper.
-						getAnalyzer( member.getAnnotation( org.hibernate.search.annotations.Analyzer.class ), context );
+						getAnalyzer(
+								ReflectionHelper.getAnnotation(
+										member,
+										org.hibernate.search.annotations.Analyzer.class
+								), context
+						);
 				metadata.analyzer = analyzer != null ? analyzer : propertiesMetadata.analyzer;
 
 				if ( disableOptimizations ) {
@@ -850,11 +922,11 @@ public abstract class AbstractDocumentBuilder<T> {
 				/**
 				 * We will only index the "expected" type but that's OK, HQL cannot do down-casting either
 				 */
-				if ( member.isArray() ) {
+				if ( ReflectionHelper.isArray( member ) ) {
 					propertiesMetadata.embeddedContainers.add( PropertiesMetadata.Container.ARRAY );
 				}
-				else if ( member.isCollection() ) {
-					if ( Map.class.equals( member.getCollectionClass() ) ) {
+				else if ( ReflectionHelper.isCollection( member ) ) {
+					if ( Map.class.equals( ReflectionHelper.getElementClass( member ) ) ) {
 						//hum subclasses etc etc??
 						propertiesMetadata.embeddedContainers.add( PropertiesMetadata.Container.MAP );
 					}
@@ -866,7 +938,7 @@ public abstract class AbstractDocumentBuilder<T> {
 					propertiesMetadata.embeddedContainers.add( PropertiesMetadata.Container.OBJECT );
 				}
 
-				final String indexNullAs = embeddedNullToken( context, embeddedAnn );
+				final String indexNullAs = embeddedNullToken( context, embeddedAnnotation );
 				PropertiesMetadata.Container container = propertiesMetadata.embeddedContainers
 						.get( propertiesMetadata.embeddedContainers.size() - 1 );
 				propertiesMetadata.embeddedNullTokens.add( indexNullAs );
@@ -888,8 +960,9 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private void validateAllPathsEncountered(XClass classHostingMember, XProperty member,
-			PathsContext updatedPathsContext) {
+	private void validateAllPathsEncountered(Class<?> classHostingMember,
+											 Member member,
+											 PathsContext updatedPathsContext) {
 		Set<String> unencounteredPaths = updatedPathsContext.getUnencounteredPaths();
 		if ( unencounteredPaths.size() > 0 ) {
 			StringBuilder sb = new StringBuilder( "Found invalid @IndexedEmbedded->paths configured on class " );
@@ -953,7 +1026,7 @@ public abstract class AbstractDocumentBuilder<T> {
 		return false;
 	}
 
-	private FieldBridge guessNullEmbeddedBridge(XProperty member, PropertiesMetadata.Container container, final String indexNullAs) {
+	private FieldBridge guessNullEmbeddedBridge(Member member, PropertiesMetadata.Container container, final String indexNullAs) {
 		if ( indexNullAs == null ) {
 			return null;
 		}
@@ -962,8 +1035,8 @@ public abstract class AbstractDocumentBuilder<T> {
 			return new NullEncodingFieldBridge( NULL_EMBEDDED_STRING_BRIDGE, indexNullAs );
 		}
 		else {
-			NumericField numericField = member.getAnnotation( NumericField.class );
-			FieldBridge fieldBridge = BridgeFactory.guessType( null, numericField, member, reflectionManager );
+			NumericField numericField = ReflectionHelper.getAnnotation( member, NumericField.class );
+			FieldBridge fieldBridge = BridgeFactory.guessType( null, numericField, member );
 			if ( fieldBridge instanceof StringBridge ) {
 				fieldBridge = new NullEncodingFieldBridge( (StringBridge) fieldBridge, indexNullAs );
 			}
@@ -971,7 +1044,11 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private void bindClassBridgeAnnotation(String prefix, PropertiesMetadata propertiesMetadata, ClassBridge ann, XClass clazz, ConfigContext context) {
+	private void bindClassBridgeAnnotation(String prefix,
+										   PropertiesMetadata propertiesMetadata,
+										   ClassBridge ann,
+										   Class<?> clazz,
+										   ConfigContext context) {
 		String fieldName = prefix + ann.name();
 		propertiesMetadata.classNames.add( fieldName );
 		propertiesMetadata.classStores.add( ann.store() );
@@ -991,88 +1068,111 @@ public abstract class AbstractDocumentBuilder<T> {
 		addToScopedAnalyzer( fieldName, analyzer, index );
 	}
 
-	private void bindSpatialAnnotation(String prefix, PropertiesMetadata propertiesMetadata, Spatial ann, XClass clazz, ConfigContext context) {
+	private void bindSpatialAnnotation(String prefix,
+									   PropertiesMetadata propertiesMetadata,
+									   Spatial spatialAnnotation,
+									   Class<?> clazz) {
 		String fieldName;
-		if ( !ann.name().isEmpty() ) {
-			fieldName = prefix + ann.name();
+		if ( !spatialAnnotation.name().isEmpty() ) {
+			fieldName = prefix + spatialAnnotation.name();
 		}
 		else {
 			fieldName = COORDINATES_DEFAULT_FIELD;
 		}
 
-		if ( spatialNames.contains( ann.name() ) ) {
+		if ( spatialNames.contains( spatialAnnotation.name() ) ) {
 			throw log.cannotHaveTwoSpatialsWithDefaultOrSameName( clazz.getName() );
 		}
-		spatialNames.add( ann.name() );
+		spatialNames.add( spatialAnnotation.name() );
 
 		propertiesMetadata.classNames.add( fieldName );
-		propertiesMetadata.classStores.add( ann.store() );
+		propertiesMetadata.classStores.add( spatialAnnotation.store() );
 		Field.Index index = AnnotationProcessingHelper.getIndex( Index.YES, Analyze.NO, Norms.NO );
 		propertiesMetadata.classIndexes.add( index );
 		propertiesMetadata.classTermVectors.add( AnnotationProcessingHelper.getTermVector( TermVector.NO ) );
 		final FieldBridge spatialBridge;
-		if ( reflectionManager.toXClass( Coordinates.class ).isAssignableFrom( clazz ) ) {
-			spatialBridge = BridgeFactory.buildSpatialBridge( ann, clazz, null, null );
+		if ( Coordinates.class.isAssignableFrom( clazz ) ) {
+			spatialBridge = BridgeFactory.buildSpatialBridge( spatialAnnotation, clazz, null, null );
 		}
 		else {
 
 			String latitudeField = null;
 			String longitudeField = null;
 
-			List<XProperty> fieldList = clazz.getDeclaredProperties( XClass.ACCESS_FIELD );
+			List<Member> fieldList = ReflectionHelper.getDeclaredProperties( clazz, ReflectionHelper.Access.FIELD );
 
-			for ( XProperty property : fieldList ) {
-				if ( property.isAnnotationPresent( Latitude.class ) && ( property.getAnnotation( Latitude.class ) ).of().equals(
-						ann.name()
-				) ) {
+			for ( Member field : fieldList ) {
+				if ( ReflectionHelper.isAnnotationPresent( field, Latitude.class ) &&
+						ReflectionHelper.getAnnotation( field, Latitude.class )
+								.of()
+								.equals( spatialAnnotation.name() ) ) {
 					if ( latitudeField != null ) {
-						throw log.ambiguousLatitudeDefinition( this.beanXClassName, latitudeField, property.getName() );
+						throw log.ambiguousLatitudeDefinition( this.beanXClassName, latitudeField, field.getName() );
 					}
-					latitudeField = property.getName();
+					latitudeField = field.getName();
 				}
-				if ( property.isAnnotationPresent( Longitude.class ) && ( property.getAnnotation( Longitude.class )).of().equals(
-						ann.name()
-				) ) {
+				if ( ReflectionHelper.isAnnotationPresent( field, Longitude.class ) &&
+						ReflectionHelper.getAnnotation( field, Longitude.class )
+								.of()
+								.equals( spatialAnnotation.name() ) ) {
 					if ( longitudeField != null ) {
-						throw log.ambiguousLongitudeDefinition( this.beanXClassName, longitudeField, property.getName() );
+						throw log.ambiguousLongitudeDefinition(
+								this.beanXClassName,
+								longitudeField,
+								field.getName()
+						);
 					}
-					longitudeField = property.getName();
+					longitudeField = field.getName();
 				}
 			}
 
-			List<XProperty> propertyList = clazz.getDeclaredProperties( XClass.ACCESS_PROPERTY );
+			List<Member> memberList = ReflectionHelper.getDeclaredProperties( clazz, ReflectionHelper.Access.GETTER );
 
-			for ( XProperty property : propertyList ) {
-				if ( property.isAnnotationPresent( Latitude.class ) && ( property.getAnnotation( Latitude.class ) ).of().equals(
-						ann.name()
-				) ) {
+			for ( Member member : memberList ) {
+				if ( ReflectionHelper.isAnnotationPresent( member, Latitude.class ) &&
+						ReflectionHelper.getAnnotation( member, Latitude.class )
+								.of()
+								.equals( spatialAnnotation.name() ) ) {
 					if ( latitudeField != null ) {
-						throw log.ambiguousLatitudeDefinition( this.beanXClassName, latitudeField, property.getName() );
+						throw log.ambiguousLatitudeDefinition( this.beanXClassName, latitudeField, member.getName() );
 					}
-					latitudeField = property.getName();
+					latitudeField = member.getName();
 				}
-				if ( property.isAnnotationPresent( Longitude.class ) && ( property.getAnnotation( Longitude.class )).of().equals(
-						ann.name()
-				) ) {
+				if ( ReflectionHelper.isAnnotationPresent( member, Longitude.class ) &&
+						ReflectionHelper.getAnnotation( member, Longitude.class )
+								.of()
+								.equals( spatialAnnotation.name() ) ) {
 					if ( longitudeField != null ) {
-						throw log.ambiguousLongitudeDefinition( this.beanXClassName, longitudeField, property.getName() );
+						throw log.ambiguousLongitudeDefinition(
+								this.beanXClassName,
+								longitudeField,
+								member.getName()
+						);
 					}
-					longitudeField = property.getName();
+					longitudeField = member.getName();
 				}
 			}
 
 			if ( latitudeField != null && longitudeField != null ) {
-				spatialBridge = BridgeFactory.buildSpatialBridge( ann, clazz, latitudeField, longitudeField );
+				spatialBridge = BridgeFactory.buildSpatialBridge(
+						spatialAnnotation,
+						clazz,
+						latitudeField,
+						longitudeField
+				);
 			}
 			else {
 				spatialBridge = null;
 			}
 		}
 		if ( spatialBridge == null ) {
-			throw log.cannotFindCoordinatesNorLatLongForSpatial( ann.name().isEmpty() ? "default" : ann.name(), clazz.getName() );
+			throw log.cannotFindCoordinatesNorLatLongForSpatial(
+					spatialAnnotation.name().isEmpty() ? "default" : spatialAnnotation.name(),
+					clazz.getName()
+			);
 		}
 		propertiesMetadata.classBridges.add( spatialBridge );
-		propertiesMetadata.classBoosts.add( ann.boost().value() );
+		propertiesMetadata.classBoosts.add( spatialAnnotation.boost().value() );
 
 		Analyzer analyzer = propertiesMetadata.analyzer;
 		if ( analyzer == null ) {
@@ -1080,13 +1180,13 @@ public abstract class AbstractDocumentBuilder<T> {
 		}
 	}
 
-	private void bindFieldAnnotation(XClass classHostingMember,
-									XProperty member,
-									PropertiesMetadata propertiesMetadata,
-									String prefix,
-									org.hibernate.search.annotations.Field fieldAnnotation,
-									NumericField numericFieldAnnotation,
-									ConfigContext context) {
+	private void bindFieldAnnotation(Class<?> classHostingMember,
+									 Member member,
+									 PropertiesMetadata propertiesMetadata,
+									 String prefix,
+									 org.hibernate.search.annotations.Field fieldAnnotation,
+									 NumericField numericFieldAnnotation,
+									 ConfigContext context) {
 
 		if ( isPropertyTransient( member, context ) ) {
 			//If the indexed values are derived from a Transient field, we can't rely on dirtyness of properties.
@@ -1094,30 +1194,36 @@ public abstract class AbstractDocumentBuilder<T> {
 			forceStateInspectionOptimizationsDisabled();
 		}
 
-		FieldMetadata fieldMetadata = new FieldMetadata( prefix, member, fieldAnnotation, numericFieldAnnotation, null, context, reflectionManager );
+		FieldMetadata fieldMetadata = new FieldMetadata(
+				prefix,
+				member,
+				fieldAnnotation,
+				numericFieldAnnotation,
+				null,
+				context
+		);
 		fieldMetadata.appendToPropertiesMetadata( propertiesMetadata );
 		addToScopedAnalyzer( fieldMetadata.getFieldName(), fieldMetadata.getAnalyzer(), fieldMetadata.getIndex() );
 
-		if ( member.isCollection() ) {
+		if ( ReflectionHelper.isCollection( member ) ) {
 			fieldCollectionRoles.add( StringHelper.qualify( classHostingMember.getName(), member.getName() ) );
 		}
 	}
 
-	private void bindSpatialAnnotation(XClass classHostingMember,
-									XProperty member,
-									PropertiesMetadata propertiesMetadata,
-									String prefix,
-									Spatial spatialAnnotation,
-									ConfigContext context) {
-		if ( spatialNames.contains( spatialAnnotation.name() )) {
+	private void bindSpatialAnnotation(Class<?> classHostingMember,
+									   Member member,
+									   PropertiesMetadata propertiesMetadata,
+									   String prefix,
+									   Spatial spatialAnnotation,
+									   ConfigContext context) {
+		if ( spatialNames.contains( spatialAnnotation.name() ) ) {
 			throw log.cannotHaveTwoSpatialsWithDefaultOrSameName( classHostingMember.getName() );
 		}
 		spatialNames.add( spatialAnnotation.name() );
 
-		FieldMetadata fieldMetadata = new FieldMetadata( prefix, member, null, null,
-				spatialAnnotation, context, reflectionManager );
+		FieldMetadata fieldMetadata = new FieldMetadata( prefix, member, null, null, spatialAnnotation, context );
 		fieldMetadata.appendToPropertiesMetadata( propertiesMetadata );
-		if ( member.isCollection() ) {
+		if ( ReflectionHelper.isCollection( member ) ) {
 			fieldCollectionRoles.add( StringHelper.qualify( classHostingMember.getName(), member.getName() ) );
 		}
 	}
@@ -1126,7 +1232,7 @@ public abstract class AbstractDocumentBuilder<T> {
 		return numericFieldAnn == null ? NumericField.PRECISION_STEP_DEFAULT : numericFieldAnn.precisionStep();
 	}
 
-	private String buildEmbeddedPrefix(String prefix, IndexedEmbedded embeddedAnn, XProperty member) {
+	private String buildEmbeddedPrefix(String prefix, IndexedEmbedded embeddedAnn, Member member) {
 		String localPrefix = prefix;
 		if ( isDefaultPrefix( embeddedAnn ) ) {
 			//default to property name
@@ -1160,23 +1266,23 @@ public abstract class AbstractDocumentBuilder<T> {
 		return indexNullAs;
 	}
 
-	private float getBoost(XClass element) {
+	private float getBoost(Class<?> clazz) {
 		float boost = 1.0f;
-		if ( element == null ) {
+		if ( clazz == null ) {
 			return boost;
 		}
-		Boost boostAnnotation = element.getAnnotation( Boost.class );
+		Boost boostAnnotation = ReflectionHelper.getAnnotation( clazz, Boost.class );
 		if ( boostAnnotation != null ) {
 			boost = boostAnnotation.value();
 		}
 		return boost;
 	}
 
-	private BoostStrategy getDynamicBoost(XClass element) {
-		if ( element == null ) {
+	private BoostStrategy getDynamicBoost(Class<?> clazz) {
+		if ( clazz == null ) {
 			return null;
 		}
-		DynamicBoost boostAnnotation = element.getAnnotation( DynamicBoost.class );
+		DynamicBoost boostAnnotation = ReflectionHelper.getAnnotation( clazz, DynamicBoost.class );
 		if ( boostAnnotation == null ) {
 			return DefaultBoostStrategy.INSTANCE;
 		}
@@ -1204,9 +1310,9 @@ public abstract class AbstractDocumentBuilder<T> {
 	 * @return The {@code value} cast to collection or in case of {@code value} being a map the map values as collection.
 	 */
 	@SuppressWarnings("unchecked")
-	private <T> Collection<T> getActualCollection(XMember member, Object value) {
+	private <T> Collection<T> getActualCollection(Member member, Object value) {
 		Collection<T> collection;
-		if ( Map.class.equals( member.getCollectionClass() ) ) {
+		if ( Map.class.equals( ReflectionHelper.getCollectionClass( member ) ) ) {
 			collection = ( (Map<?, T>) value ).values();
 		}
 		else {
@@ -1225,7 +1331,9 @@ public abstract class AbstractDocumentBuilder<T> {
 	 * if the proposed change is possibly affecting the index.
 	 *
 	 * @param dirtyPropertyNames Contains the property name of each value which changed, or null for everything.
+	 *
 	 * @return true if it can't make sure the index doesn't need an update
+	 *
 	 * @since 3.4
 	 */
 	public boolean isDirty(String[] dirtyPropertyNames) {
@@ -1257,7 +1365,7 @@ public abstract class AbstractDocumentBuilder<T> {
 			}
 
 			// consider IndexedEmbedded:
-			for ( XMember embeddedMember : metadata.embeddedGetters ) {
+			for ( Member embeddedMember : metadata.embeddedGetters ) {
 				String name = embeddedMember.getName();
 				if ( name.equals( dirtyPropertyName ) ) {
 					return true;
@@ -1290,7 +1398,9 @@ public abstract class AbstractDocumentBuilder<T> {
 	 * so that the indexing event can be skipped.
 	 *
 	 * @param collectionRole a {@link java.lang.String} object.
+	 *
 	 * @return true if the collection Role does not affect index state
+	 *
 	 * @since 3.4
 	 */
 	public boolean isCollectionRoleExcluded(String collectionRole) {
@@ -1407,12 +1517,12 @@ public abstract class AbstractDocumentBuilder<T> {
 		public float boost;
 		public Analyzer analyzer;
 		public Discriminator discriminator;
-		public XMember discriminatorGetter;
+		public Member discriminatorGetter;
 		public BoostStrategy classBoostStrategy;
 		public final Map<String, Integer> fieldNameToPositionMap = new HashMap<String, Integer>();
 
 		public final List<String> fieldNames = new ArrayList<String>();
-		public final List<XMember> fieldGetters = new ArrayList<XMember>();
+		public final List<Member> fieldGetters = new ArrayList<Member>();
 		public final List<String> fieldGetterNames = new ArrayList<String>();
 		public final List<FieldBridge> fieldBridges = new ArrayList<FieldBridge>();
 		public final List<Store> fieldStore = new ArrayList<Store>();
@@ -1423,14 +1533,14 @@ public abstract class AbstractDocumentBuilder<T> {
 		public final List<String> fieldNullTokens = new LinkedList<String>();
 
 		public final List<Field.TermVector> fieldTermVectors = new ArrayList<Field.TermVector>();
-		public final List<XMember> embeddedGetters = new ArrayList<XMember>();
+		public final List<Member> embeddedGetters = new ArrayList<Member>();
 		public final List<String> embeddedFieldNames = new ArrayList<String>();
 		public final List<String> embeddedNullTokens = new ArrayList<String>();
 		public final List<String> embeddedNullFields = new ArrayList<String>();
 		public final List<FieldBridge> embeddedNullFieldBridges = new ArrayList<FieldBridge>();
 		public final List<PropertiesMetadata> embeddedPropertiesMetadata = new ArrayList<PropertiesMetadata>();
 		public final List<Container> embeddedContainers = new ArrayList<Container>();
-		public final List<XMember> containedInGetters = new ArrayList<XMember>();
+		public final List<Member> containedInGetters = new ArrayList<Member>();
 		public final Map<String, Integer> containedInDepths = new HashMap<String, Integer>();
 
 		public final List<String> classNames = new ArrayList<String>();

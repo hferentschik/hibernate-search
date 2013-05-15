@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
-import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.search.cfg.SearchMapping;
 import org.hibernate.search.spi.InstanceInitializer;
 import org.hibernate.search.spi.ServiceProvider;
@@ -48,7 +47,7 @@ public interface SearchConfiguration {
 
 	/**
 	 * Returns a {@link java.lang.Class} from a String parameter.
-	 * @param name
+	 * @param name Fully qualified name of the configured class.
 	 * @return corresponding class instance.
 	 */
 
@@ -72,14 +71,6 @@ public interface SearchConfiguration {
 	Properties getProperties();
 
 	/**
-	 * Returns a reflection manager if already available in the environment
-	 * null otherwise
-	 *
-	 * @return ReflectionManager
-	 */
-	ReflectionManager getReflectionManager();
-
-	/**
 	 * @return the programmatic configuration or {@code null}
 	 */
 	SearchMapping getProgrammaticMapping();
@@ -92,7 +83,7 @@ public interface SearchConfiguration {
 	 * {@link org.hibernate.search.spi.BuildContext#requestService(Class)} API
 	 *
 	 * Note that the lifecycle methods:
-	 *  - {@link org.hibernate.search.spi.ServiceProvider#start(java.util.Properties)}
+	 *  - {@link org.hibernate.search.spi.ServiceProvider#start(java.util.Properties, org.hibernate.search.spi.BuildContext)}
 	 *  - {@link org.hibernate.search.spi.ServiceProvider#stop()}
 	 * of the provider are *not* called.
 	 *

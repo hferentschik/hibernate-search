@@ -23,11 +23,14 @@
  */
 package org.hibernate.search.util.impl;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
 import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-
-import org.hibernate.annotations.common.reflection.XMember;
+import java.util.List;
 
 /**
  * @author Emmanuel Bernard
@@ -41,12 +44,12 @@ public abstract class ReflectionHelper {
 	/**
 	 * Get attribute name out of member unless overridden by <code>name</code>.
 	 *
-	 * @param member <code>XMember</code> from which to extract the name.
+	 * @param member <code>Member</code> from which to extract the name.
 	 * @param name Override value which will be returned in case it is not empty.
 	 *
 	 * @return attribute name out of member unless overridden by <code>name</code>.
 	 */
-	public static String getAttributeName(XMember member, String name) {
+	public static String getAttributeName(Member member, String name) {
 		return StringHelper.isNotEmpty( name ) ?
 				name :
 				member.getName(); //explicit field name
@@ -55,11 +58,11 @@ public abstract class ReflectionHelper {
 	/**
 	 * Always use this method to set accessibility regardless of the visibility.
 	 */
-	public static void setAccessible(XMember member) {
+	public static void setAccessible(Member member) {
 		try {
 			// always set accessible to true as it bypass the security model checks
 			// at execution time and is faster.
-			member.setAccessible( true );
+			( (AccessibleObject) member ).setAccessible( true );
 		}
 		catch ( SecurityException se ) {
 			if ( !Modifier.isPublic( member.getModifiers() ) ) {
@@ -68,30 +71,76 @@ public abstract class ReflectionHelper {
 		}
 	}
 
-	/**
-	 * Always use this method to set accessibility regardless of the visibility.
-	 */
-	public static void setAccessible(AccessibleObject member) {
-		try {
-			// always set accessible to true as it bypass the security model checks
-			// at execution time and is faster.
-			member.setAccessible( true );
-		}
-		catch ( SecurityException se ) {
-			if ( !Modifier.isPublic( ( (Member) member ).getModifiers() ) ) {
-				throw se;
-			}
-		}
+	public static <A extends Annotation> boolean isAnnotationPresent(Member member, Class<A> annotationClass) {
+		return getAnnotation( member, annotationClass ) != null;
 	}
 
-	public static Object getMemberValue(Object bean, XMember getter) {
-		Object value;
+	public static <A extends Annotation> A getAnnotation(Member member, Class<A> annotationClass) {
+		return getAnnotation( (AnnotatedElement) member, annotationClass );
+	}
+
+	public static Annotation[] getAnnotations(Member member) {
+		return ( (AnnotatedElement) member ).getAnnotations();
+	}
+
+	public static <A extends Annotation> A getAnnotation(AnnotatedElement annotatedElement, Class<A> annotationClass) {
+		return annotatedElement.getAnnotation( annotationClass );
+	}
+
+	public static Object getMemberValue(Object object, Member member) {
+		if ( member instanceof Method ) {
+			return getValue( (Method) member, object );
+		}
+		else if ( member instanceof Field ) {
+			return getValue( (Field) member, object );
+		}
+		return null;
+	}
+
+	public static Object getValue(Field field, Object object) {
 		try {
-			value = getter.invoke( bean );
+			return field.get( object );
 		}
 		catch ( Exception e ) {
 			throw new IllegalStateException( "Could not get property value", e );
 		}
-		return value;
+	}
+
+	public static Object getValue(Method method, Object object) {
+		try {
+			return method.invoke( object );
+		}
+		catch ( Exception e ) {
+			throw new IllegalStateException( "Could not get property value", e );
+		}
+	}
+
+	public static boolean isCollection(Member member) {
+		return false;
+	}
+
+	public static Class<?> getCollectionClass(Member member) {
+		return null;
+	}
+
+	public static boolean isArray(Member member) {
+		return false;
+	}
+
+	public static boolean isMap(Member member) {
+		return false;
+	}
+
+	public static List<Member> getDeclaredProperties(Class<?> clazz, Access access) {
+		return null;
+	}
+
+	public static Class<?> getElementClass(Member member) {
+		return null;
+	}
+
+	public enum Access {
+		GETTER,
+		FIELD
 	}
 }

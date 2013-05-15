@@ -23,11 +23,11 @@
  */
 package org.hibernate.search.engine.impl;
 
+import java.lang.reflect.Member;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Field;
 
-import org.hibernate.annotations.common.reflection.ReflectionManager;
-import org.hibernate.annotations.common.reflection.XProperty;
 import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.Index;
 import org.hibernate.search.annotations.Norms;
@@ -53,7 +53,7 @@ import org.hibernate.search.util.logging.impl.LoggerFactory;
 public class FieldMetadata {
 	private static final Log log = LoggerFactory.make();
 
-	private final XProperty fieldGetter;
+	private final Member fieldGetter;
 	private final String fieldName;
 	private final Store store;
 	private final Field.Index index;
@@ -66,12 +66,11 @@ public class FieldMetadata {
 	private final Analyzer analyzer;
 
 	public FieldMetadata(String prefix,
-						XProperty member,
+						Member member,
 						org.hibernate.search.annotations.Field fieldAnn,
 						NumericField numericFieldAnn,
 						Spatial spatialAnn,
-						ConfigContext context,
-						ReflectionManager reflectionManager) {
+						ConfigContext context) {
 		ReflectionHelper.setAccessible( member );
 		fieldGetter = member;
 		String indexNullAs;
@@ -106,7 +105,7 @@ public class FieldMetadata {
 		}
 		dynamicBoostStrategy = AnnotationProcessingHelper.getDynamicBoost( member );
 		precisionStep = AnnotationProcessingHelper.getPrecisionStep( numericFieldAnn );
-		FieldBridge bridge = BridgeFactory.guessType( fieldAnn, numericFieldAnn, member, reflectionManager );
+		FieldBridge bridge = BridgeFactory.guessType( fieldAnn, numericFieldAnn, member );
 		if ( indexNullAs != null && bridge instanceof TwoWayFieldBridge ) {
 			bridge = new NullEncodingTwoWayFieldBridge( (TwoWayFieldBridge) bridge, indexNullAs );
 		}
@@ -115,7 +114,7 @@ public class FieldMetadata {
 		// Field > property > entity analyzer
 		if ( tmpAnalyzer == null ) {
 			tmpAnalyzer = AnnotationProcessingHelper.getAnalyzer(
-					member.getAnnotation( org.hibernate.search.annotations.Analyzer.class ),
+					ReflectionHelper.getAnnotation( member, org.hibernate.search.annotations.Analyzer.class  ),
 					context
 			);
 		}

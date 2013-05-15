@@ -23,18 +23,17 @@
  */
 package org.hibernate.search.test.util;
 
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
 
-import org.hibernate.search.cfg.spi.IndexManagerFactory;
-import org.hibernate.search.cfg.spi.SearchConfigurationBase;
-import org.hibernate.search.cfg.spi.SearchConfiguration;
 import org.hibernate.search.cfg.SearchMapping;
+import org.hibernate.search.cfg.spi.IndexManagerFactory;
+import org.hibernate.search.cfg.spi.SearchConfiguration;
+import org.hibernate.search.cfg.spi.SearchConfigurationBase;
 import org.hibernate.search.impl.DefaultIndexManagerFactory;
 import org.hibernate.search.impl.SimpleInitializer;
-import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.search.spi.InstanceInitializer;
 import org.hibernate.search.spi.ServiceProvider;
 
@@ -91,10 +90,6 @@ public class ManualConfiguration extends SearchConfigurationBase implements Sear
 
 	public Properties getProperties() {
 		return properties;
-	}
-
-	public ReflectionManager getReflectionManager() {
-		return null;
 	}
 
 	public SearchMapping getProgrammaticMapping() {

@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
-import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.search.cfg.SearchMapping;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
 import org.hibernate.search.cfg.spi.SearchConfigurationBase;
@@ -66,11 +65,6 @@ public class SearchConfigurationContractTester extends SearchConfigurationBase i
 
 	@Override
 	public Properties getProperties() {
-		return null;
-	}
-
-	@Override
-	public ReflectionManager getReflectionManager() {
 		return null;
 	}
 

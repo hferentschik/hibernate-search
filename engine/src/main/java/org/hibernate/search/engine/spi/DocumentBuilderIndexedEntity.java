@@ -25,6 +25,7 @@ package org.hibernate.search.engine.spi;
 
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,25 +44,13 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Similarity;
 
 import org.hibernate.search.ProjectionConstants;
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Norms;
-import org.hibernate.search.engine.impl.AnnotationProcessingHelper;
-import org.hibernate.search.engine.impl.LuceneOptionsImpl;
-import org.hibernate.search.spi.InstanceInitializer;
-import org.hibernate.search.util.impl.ClassLoaderHelper;
-import org.hibernate.search.util.impl.ReflectionHelper;
-import org.hibernate.search.util.logging.impl.Log;
-
-import org.hibernate.search.util.impl.AssertionFailure;
-import org.hibernate.annotations.common.reflection.ReflectionManager;
-import org.hibernate.annotations.common.reflection.XClass;
-import org.hibernate.annotations.common.reflection.XMember;
-import org.hibernate.annotations.common.reflection.XProperty;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.analyzer.Discriminator;
+import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.CacheFromIndex;
 import org.hibernate.search.annotations.DocumentId;
 import org.hibernate.search.annotations.Index;
+import org.hibernate.search.annotations.Norms;
 import org.hibernate.search.annotations.NumericField;
 import org.hibernate.search.annotations.ProvidedId;
 import org.hibernate.search.annotations.Store;
@@ -70,20 +59,27 @@ import org.hibernate.search.backend.AddLuceneWork;
 import org.hibernate.search.backend.DeleteLuceneWork;
 import org.hibernate.search.backend.LuceneWork;
 import org.hibernate.search.backend.UpdateLuceneWork;
-import org.hibernate.search.bridge.builtin.impl.TwoWayString2FieldBridgeAdaptor;
-import org.hibernate.search.bridge.impl.BridgeFactory;
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.LuceneOptions;
 import org.hibernate.search.bridge.StringBridge;
 import org.hibernate.search.bridge.TwoWayFieldBridge;
 import org.hibernate.search.bridge.TwoWayStringBridge;
 import org.hibernate.search.bridge.builtin.NumericFieldBridge;
+import org.hibernate.search.bridge.builtin.impl.TwoWayString2FieldBridgeAdaptor;
+import org.hibernate.search.bridge.impl.BridgeFactory;
 import org.hibernate.search.bridge.spi.ConversionContext;
 import org.hibernate.search.bridge.util.impl.ContextualExceptionBridgeHelper;
+import org.hibernate.search.engine.impl.AnnotationProcessingHelper;
+import org.hibernate.search.engine.impl.LuceneOptionsImpl;
 import org.hibernate.search.impl.ConfigContext;
 import org.hibernate.search.query.collector.impl.FieldCacheCollectorFactory;
 import org.hibernate.search.query.fieldcache.impl.ClassLoadingStrategySelector;
 import org.hibernate.search.query.fieldcache.impl.FieldCacheLoadingType;
+import org.hibernate.search.spi.InstanceInitializer;
+import org.hibernate.search.util.impl.AssertionFailure;
+import org.hibernate.search.util.impl.ClassLoaderHelper;
+import org.hibernate.search.util.impl.ReflectionHelper;
+import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
 
 /**
@@ -119,7 +115,7 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 	/**
 	 * The class member used as document id.
 	 */
-	private XMember idGetter;
+	private Member idGetter;
 
 	/**
 	 * Name of the document id field.
@@ -145,12 +141,12 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 	/**
 	 * The member - if any - annotated with @DocumentId
 	 */
-	private XProperty documentIdAnnotatedMember; //FIXME: to remove, needed only for isIdMatchingJpaId()
+	private Member documentIdAnnotatedMember; //FIXME: to remove, needed only for isIdMatchingJpaId()
 
 	/**
 	 * The member - if any - annotated with @Id
 	 */
-	private XProperty jpaIdAnnotatedMember; //FIXME: to remove, needed only for isIdMatchingJpaId()
+	private Member jpaIdAnnotatedMember; //FIXME: to remove, needed only for isIdMatchingJpaId()
 
 	/**
 	 * Type of allowed FieldCache usage
@@ -170,17 +166,19 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 	 * @param clazz The class for which to build a <code>DocumentBuilderContainedEntity</code>
 	 * @param context Handle to default configuration settings
 	 * @param similarity the Similarity implementation set at the related index level
-	 * @param reflectionManager Reflection manager to use for processing the annotations
 	 * @param optimizationBlackList mutable register, keeps track of types on which we need to disable collection events optimizations
 	 * @param instanceInitializer helper class for class object graph navigation
 	 */
-	public DocumentBuilderIndexedEntity(XClass clazz, ConfigContext context, Similarity similarity,
-			ReflectionManager reflectionManager, Set<XClass> optimizationBlackList, InstanceInitializer instanceInitializer) {
-		super( clazz, context, similarity, reflectionManager, optimizationBlackList, instanceInitializer );
+	public DocumentBuilderIndexedEntity(Class<?> clazz,
+										ConfigContext context,
+										Similarity similarity,
+										Set<Class<?>> optimizationBlackList,
+										InstanceInitializer instanceInitializer) {
+		super( clazz, context, similarity, optimizationBlackList, instanceInitializer );
 		// special case @ProvidedId
-		ProvidedId provided = findProvidedId( clazz, reflectionManager );
+		ProvidedId provided = findProvidedId( clazz );
 		if ( provided != null ) {
-			idBridge = BridgeFactory.extractTwoWayType( provided.bridge(), clazz, reflectionManager );
+			idBridge = BridgeFactory.extractTwoWayType( provided.bridge(), clazz);
 			idKeywordName = provided.name();
 			idProvided = true;
 		}
@@ -231,7 +229,7 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 		return null;
 	}
 
-	public XMember getIdGetter() {
+	public Member getIdGetter() {
 		return idGetter;
 	}
 
@@ -239,13 +237,23 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 		return idFieldCacheCollectorFactory;
 	}
 
-	protected void documentBuilderSpecificChecks(XProperty member, PropertiesMetadata propertiesMetadata, boolean isRoot, String prefix, ConfigContext context, PathsContext pathsContext) {
+	protected void documentBuilderSpecificChecks(Member member,
+												 PropertiesMetadata propertiesMetadata,
+												 boolean isRoot,
+												 String prefix,
+												 ConfigContext context,
+												 PathsContext pathsContext) {
 		checkDocumentId( member, propertiesMetadata, isRoot, prefix, context, pathsContext );
 	}
 
-	protected void checkDocumentId(XProperty member, PropertiesMetadata propertiesMetadata, boolean isRoot, String prefix, ConfigContext context, PathsContext pathsContext) {
+	protected void checkDocumentId(Member member,
+								   PropertiesMetadata propertiesMetadata,
+								   boolean isRoot,
+								   String prefix,
+								   ConfigContext context,
+								   PathsContext pathsContext) {
 		Annotation idAnnotation = getIdAnnotation( member, context );
-		NumericField numericFieldAnn = member.getAnnotation( NumericField.class );
+		NumericField numericFieldAnnotation = ReflectionHelper.getAnnotation( member, NumericField.class );
 		if ( idAnnotation != null ) {
 			String attributeName = getIdAttributeName( member, idAnnotation );
 			if ( pathsContext != null ) {
@@ -266,7 +274,7 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 				}
 				idKeywordName = prefix + attributeName;
 
-				FieldBridge fieldBridge = BridgeFactory.guessType( null, numericFieldAnn, member, reflectionManager );
+				FieldBridge fieldBridge = BridgeFactory.guessType( null, numericFieldAnnotation, member);
 				if ( fieldBridge instanceof TwoWayFieldBridge ) {
 					idBridge = (TwoWayFieldBridge) fieldBridge;
 				}
@@ -294,12 +302,12 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 				propertiesMetadata.fieldIndex.add( index );
 				propertiesMetadata.fieldTermVectors.add( AnnotationProcessingHelper.getTermVector( TermVector.NO ) );
 				propertiesMetadata.fieldNullTokens.add( null );
-				propertiesMetadata.fieldBridges.add( BridgeFactory.guessType( null, null, member, reflectionManager ) );
+				propertiesMetadata.fieldBridges.add( BridgeFactory.guessType( null, null, member) );
 				propertiesMetadata.fieldBoosts.add( AnnotationProcessingHelper.getBoost( member, null ) );
 				propertiesMetadata.precisionSteps.add( getPrecisionStep( null ) );
 				propertiesMetadata.dynamicFieldBoosts.add( AnnotationProcessingHelper.getDynamicBoost( member ) );
 				// property > entity analyzer (no field analyzer)
-				Analyzer analyzer = AnnotationProcessingHelper.getAnalyzer( member.getAnnotation( org.hibernate.search.annotations.Analyzer.class ), context );
+				Analyzer analyzer = AnnotationProcessingHelper.getAnalyzer( ReflectionHelper.getAnnotation(member, org.hibernate.search.annotations.Analyzer.class ), context );
 				if ( analyzer == null ) {
 					analyzer = propertiesMetadata.analyzer;
 				}
@@ -322,11 +330,11 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 	 *
 	 * @return the annotation used as document id or <code>null</code> if id annotation is specified on the property.
 	 */
-	private Annotation getIdAnnotation(XProperty member, ConfigContext context) {
+	private Annotation getIdAnnotation(Member member, ConfigContext context) {
 		Annotation idAnnotation = null;
 
 		// check for explicit DocumentId
-		DocumentId documentIdAnn = member.getAnnotation( DocumentId.class );
+		DocumentId documentIdAnn = ReflectionHelper.getAnnotation( member, DocumentId.class );
 		if ( documentIdAnn != null ) {
 			idAnnotation = documentIdAnn;
 			documentIdAnnotatedMember = member;
@@ -338,7 +346,7 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 				@SuppressWarnings("unchecked")
 				Class<? extends Annotation> jpaIdClass =
 						ClassLoaderHelper.classForName( "javax.persistence.Id", ConfigContext.class.getClassLoader() );
-				jpaId = member.getAnnotation( jpaIdClass );
+				jpaId = ReflectionHelper.getAnnotation( member, jpaIdClass );
 			}
 			catch ( ClassNotFoundException e ) {
 				throw new SearchException( "Unable to load @Id.class even though it should be present ?!" );
@@ -354,10 +362,10 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 		return idAnnotation;
 	}
 
-	private ProvidedId findProvidedId(XClass clazz, ReflectionManager reflectionManager) {
+	private ProvidedId findProvidedId(Class<?> clazz) {
 		ProvidedId id = null;
-		XClass currentClass = clazz;
-		while ( id == null && ( !reflectionManager.equals( currentClass, Object.class ) ) ) {
+		Class<?> currentClass = clazz;
+		while ( id == null && ( !currentClass.equals( Object.class ) ) ) {
 			id = currentClass.getAnnotation( ProvidedId.class );
 			currentClass = currentClass.getSuperclass();
 		}
@@ -518,15 +526,15 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 		}
 
 		// process the indexed fields
-		XMember previousMember = null;
+		Member previousMember = null;
 		Object currentFieldValue = null;
 		for ( int i = 0; i < propertiesMetadata.fieldNames.size(); i++ ) {
-			XMember member = propertiesMetadata.fieldGetters.get( i );
+			Member member = propertiesMetadata.fieldGetters.get( i );
 			if ( previousMember != member ) {
 				currentFieldValue = unproxy( ReflectionHelper.getMemberValue( unproxiedInstance, member ),
 						objectInitializer );
 				previousMember = member;
-				if ( member.isCollection() ) {
+				if ( ReflectionHelper.isCollection( member ) ) {
 					if ( currentFieldValue instanceof Collection ) {
 						objectInitializer.initializeCollection( (Collection) currentFieldValue );
 					}
@@ -558,14 +566,14 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 
 		// recursively process embedded objects
 		for ( int i = 0; i < propertiesMetadata.embeddedGetters.size(); i++ ) {
-			XMember member = propertiesMetadata.embeddedGetters.get( i );
+			Member member = propertiesMetadata.embeddedGetters.get( i );
 			conversionContext.pushProperty( propertiesMetadata.embeddedFieldNames.get( i ) );
 			try {
 				Object value = ReflectionHelper.getMemberValue( unproxiedInstance, member );
 				//TODO handle boost at embedded level: already stored in propertiesMedatada.boost
 
 				if ( value == null ) {
-					processEmbeddedNullValue( doc, propertiesMetadata, conversionContext, i, member );
+					processEmbeddedNullValue( doc, propertiesMetadata, conversionContext, i);
 					continue;
 				}
 
@@ -637,7 +645,10 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 		}
 	}
 
-	private void processEmbeddedNullValue(Document doc, PropertiesMetadata propertiesMetadata, ConversionContext conversionContext, int i, XMember member) {
+	private void processEmbeddedNullValue(Document doc,
+										  PropertiesMetadata propertiesMetadata,
+										  ConversionContext conversionContext,
+										  int i) {
 		final String nullMarker = propertiesMetadata.embeddedNullTokens.get( i );
 		if ( nullMarker != null ) {
 			String fieldName = propertiesMetadata.embeddedNullFields.get( i );
@@ -752,10 +763,10 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 				else if ( StringBridge.class.isAssignableFrom( bridgeClass ) ) {
 					return objectToString( (StringBridge) bridge, fieldName, value, conversionContext );
 				}
-				throw log.fieldBridgeNotTwoWay( bridgeClass, fieldName, getBeanXClass() );
+				throw log.fieldBridgeNotTwoWay( bridgeClass, fieldName, getBeanClass() );
 			}
 		}
-		throw new SearchException( "Unable to find field " + fieldName + " in " + getBeanXClass() );
+		throw new SearchException( "Unable to find field " + fieldName + " in " + getBeanClass() );
 	}
 
 	private FieldBridge getBridge(List<String> names, List<FieldBridge> bridges, String fieldName) {
@@ -841,7 +852,7 @@ public class DocumentBuilderIndexedEntity<T> extends AbstractDocumentBuilder<T> 
 	 *
 	 * @return property name to be used as document id.
 	 */
-	private String getIdAttributeName(XProperty member, Annotation idAnnotation) {
+	private String getIdAttributeName(Member member, Annotation idAnnotation) {
 		String name = null;
 		try {
 			Method m = idAnnotation.getClass().getMethod( "name" );

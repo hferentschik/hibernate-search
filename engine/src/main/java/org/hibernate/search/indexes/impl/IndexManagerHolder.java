@@ -27,9 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.lucene.search.Similarity;
 
-import org.hibernate.annotations.common.reflection.ReflectionManager;
-import org.hibernate.annotations.common.reflection.XClass;
-import org.hibernate.annotations.common.reflection.java.JavaReflectionManager;
 import org.hibernate.search.Environment;
 import org.hibernate.search.SearchException;
 import org.hibernate.search.annotations.Indexed;
@@ -81,7 +78,7 @@ public class IndexManagerHolder {
 	//So we get better caching too, as the changed indexes change cache keys on a fine-grained basis
 	//(for both fieldCaches and cached filters)
 	public synchronized MutableEntityIndexBinding buildEntityIndexBinding(
-			XClass entity,
+			Class<?> entity,
 			Class mappedClass,
 			SearchConfiguration cfg,
 			WorkerBuildContext context
@@ -146,12 +143,12 @@ public class IndexManagerHolder {
 
 		Indexed indexedAnnotation = entity.getAnnotation( Indexed.class );
 		EntityIndexingInterceptor<?> interceptor = null;
-		if (indexedAnnotation != null) {
+		if ( indexedAnnotation != null ) {
 			Class<? extends EntityIndexingInterceptor> interceptorClass = getInterceptorClassFromHierarchy(
 					entity,
 					indexedAnnotation
 			);
-			if (interceptorClass == DefaultEntityInterceptor.class) {
+			if ( interceptorClass == DefaultEntityInterceptor.class ) {
 				interceptor = null;
 			}
 			else {
@@ -171,13 +168,13 @@ public class IndexManagerHolder {
 		);
 	}
 
-	private Class<? extends EntityIndexingInterceptor> getInterceptorClassFromHierarchy(XClass entity, Indexed indexedAnnotation) {
+	private Class<? extends EntityIndexingInterceptor> getInterceptorClassFromHierarchy(Class<?> entity, Indexed indexedAnnotation) {
 		Class<? extends EntityIndexingInterceptor> result = indexedAnnotation.interceptor();
-		XClass superEntity = entity;
+		Class<?> superEntity = entity;
 		while ( result == DefaultEntityInterceptor.class ) {
 			superEntity = superEntity.getSuperclass();
 			//Object.class
-			if (superEntity == null) {
+			if ( superEntity == null ) {
 				return result;
 			}
 			Indexed indexAnnForSuperclass = superEntity.getAnnotation( Indexed.class );
@@ -188,23 +185,24 @@ public class IndexManagerHolder {
 		return result;
 	}
 
-	@SuppressWarnings( "unchecked" )
-	private <T,U> MutableEntityIndexBinding<T> buildTypesafeMutableEntityBinder(Class<T> type, IndexManager[] providers,
-																		IndexShardingStrategy shardingStrategy,
-																		Similarity similarityInstance,
-																		EntityIndexingInterceptor<U> interceptor) {
+	@SuppressWarnings("unchecked")
+	private <T, U> MutableEntityIndexBinding<T> buildTypesafeMutableEntityBinder(Class<T> type, IndexManager[] providers,
+																				 IndexShardingStrategy shardingStrategy,
+																				 Similarity similarityInstance,
+																				 EntityIndexingInterceptor<U> interceptor) {
 		EntityIndexingInterceptor<? super T> safeInterceptor = (EntityIndexingInterceptor<? super T>) interceptor;
 		return new MutableEntityIndexBinding<T>( shardingStrategy, similarityInstance, providers, safeInterceptor );
 	}
 
 	/**
 	 * Specifies a custom similarity on an index
+	 *
 	 * @param newSimilarity
 	 * @param manager
 	 */
 	private void setSimilarity(Similarity newSimilarity, IndexManager manager) {
 		Similarity similarity = manager.getSimilarity();
-		if ( similarity != null && ! similarity.getClass().equals( newSimilarity.getClass() ) ) {
+		if ( similarity != null && !similarity.getClass().equals( newSimilarity.getClass() ) ) {
 			throw new SearchException(
 					"Multiple entities are sharing the same index but are declaring an " +
 							"inconsistent Similarity. When overriding default Similarity make sure that all types sharing a same index " +
@@ -227,27 +225,24 @@ public class IndexManagerHolder {
 			manager.initialize( indexName, indexProps, context );
 			return manager;
 		}
-		catch (Exception e) {
+		catch ( Exception e ) {
 			throw log.unableToInitializeIndexManager( indexName, e );
 		}
 	}
 
 	/**
 	 * Extracts the index name used for the entity from it's annotations
+	 *
 	 * @return the index name
 	 */
-	private static String getDirectoryProviderName(XClass clazz, SearchConfiguration cfg) {
-		ReflectionManager reflectionManager = cfg.getReflectionManager();
-		if ( reflectionManager == null ) {
-			reflectionManager = new JavaReflectionManager();
-		}
+	private static String getDirectoryProviderName(Class<?> clazz, SearchConfiguration cfg) {
 		//get the most specialized (ie subclass > superclass) non default index name
 		//if none extract the name from the most generic (superclass > subclass) @Indexed class in the hierarchy
 		//FIXME I'm inclined to get rid of the default value
 		Class<?> aClass = cfg.getClassMapping( clazz.getName() );
-		XClass rootIndex = null;
+		Class<?> rootIndex = null;
 		do {
-			XClass currentClazz = reflectionManager.toXClass( aClass );
+			Class<?> currentClazz = aClass;
 			Indexed indexAnn = currentClazz.getAnnotation( Indexed.class );
 			if ( indexAnn != null ) {
 				if ( indexAnn.index().length() != 0 ) {
@@ -313,6 +308,7 @@ public class IndexManagerHolder {
 	/**
 	 * Useful for MutableSearchFactory, this haves all managed IndexManagers
 	 * switch over to the new SearchFactory.
+	 *
 	 * @param factory the new SearchFactory to set on each IndexManager.
 	 */
 	public void setActiveSearchFactory(SearchFactoryImplementorWithShareableState factory) {
@@ -333,6 +329,7 @@ public class IndexManagerHolder {
 
 	/**
 	 * @param targetIndexName the name of the IndexManager to look up
+	 *
 	 * @return the IndexManager, or null if it doesn't exist
 	 */
 	public IndexManager getIndexManager(String targetIndexName) {

@@ -24,8 +24,8 @@
 
 package org.hibernate.search.util.impl;
 
-import org.hibernate.annotations.common.util.impl.Log;
-import org.hibernate.annotations.common.util.impl.LoggerFactory;
+import org.hibernate.search.util.logging.impl.Log;
+import org.hibernate.search.util.logging.impl.LoggerFactory;
 
 /**
  * Indicates failure of an assertion: a possible bug in Hibernate.
@@ -35,15 +35,15 @@ import org.hibernate.annotations.common.util.impl.LoggerFactory;
  */
 public class AssertionFailure extends RuntimeException {
 
-	private static final Log log = LoggerFactory.make( AssertionFailure.class.getName() );
+	private static final Log log = LoggerFactory.make( );
 
 	public AssertionFailure(String s) {
 		super( s );
-		log.assertionFailure( this );
+//		log.assertionFailure( this );
 	}
 
 	public AssertionFailure(String s, Throwable t) {
 		super( s, t );
-		log.assertionFailure( this );
+//		log.assertionFailure( this );
 	}
 }

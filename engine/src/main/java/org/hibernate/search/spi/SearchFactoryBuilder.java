@@ -210,15 +210,10 @@ public class SearchFactoryBuilder {
 	private SearchFactoryImplementor buildNewSearchFactory() {
 		createCleanFactoryState( cfg );
 
-		final ReflectionManager reflectionManager = getReflectionManager( cfg );
-		if ( reflectionManager != cfg.getReflectionManager() ) {
-			cfg = new ReflectionReplacingSearchConfiguration( reflectionManager, cfg );
-		}
-
 		BuildContext buildContext = new BuildContext();
 
 		final SearchMapping mapping = SearchMappingBuilder.getSearchMapping( cfg );
-		applySearchMappingToMetadata( reflectionManager, mapping );
+		applySearchMappingToMetadata(  mapping );
 
 		factoryState.setSearchMapping( mapping ); // might be null if feature is not used
 
@@ -259,10 +254,9 @@ public class SearchFactoryBuilder {
 	 * We need to apply the programmatically configured mapping toe the reflectionManager
 	 * to fake the annotations.
 	 *
-	 * @param reflectionManager assumed a MetadataProviderInjector, it's state will be changed
 	 * @param mapping the SearchMapping to apply
 	 */
-	private void applySearchMappingToMetadata(ReflectionManager reflectionManager, SearchMapping mapping) {
+	private void applySearchMappingToMetadata(SearchMapping mapping) {
 		if ( mapping != null ) {
 			if ( !( reflectionManager instanceof MetadataProviderInjector ) ) {
 				throw new SearchException(
@@ -605,11 +599,6 @@ public class SearchFactoryBuilder {
 				bindFullTextFilterDef( defAnn );
 			}
 		}
-	}
-
-	private ReflectionManager getReflectionManager(SearchConfiguration cfg) {
-		ReflectionManager reflectionManager = cfg.getReflectionManager();
-		return getReflectionManager( reflectionManager );
 	}
 
 	private ReflectionManager getReflectionManager(ReflectionManager reflectionManager) {

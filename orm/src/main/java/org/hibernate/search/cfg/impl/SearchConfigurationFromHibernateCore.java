@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
-import org.hibernate.annotations.common.reflection.ReflectionManager;
-import org.hibernate.annotations.common.reflection.java.JavaReflectionManager;
 import org.hibernate.mapping.PersistentClass;
 import org.hibernate.search.cfg.SearchMapping;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
@@ -47,7 +45,6 @@ import org.hibernate.search.spi.ServiceProvider;
 public class SearchConfigurationFromHibernateCore extends SearchConfigurationBase implements SearchConfiguration {
 
 	private final org.hibernate.cfg.Configuration cfg;
-	private ReflectionManager reflectionManager;
 
 	public SearchConfigurationFromHibernateCore(org.hibernate.cfg.Configuration cfg) {
 		if ( cfg == null ) throw new NullPointerException( "Configuration is null" );
@@ -68,23 +65,6 @@ public class SearchConfigurationFromHibernateCore extends SearchConfigurationBas
 
 	public Properties getProperties() {
 		return cfg.getProperties();
-	}
-
-	public ReflectionManager getReflectionManager() {
-		if ( reflectionManager == null ) {
-			try {
-				//TODO introduce a ReflectionManagerHolder interface to avoid reflection
-				//I want to avoid hard link between HAN and Validator for such a simple need
-				//reuse the existing reflectionManager one when possible
-				reflectionManager =
-						(ReflectionManager) cfg.getClass().getMethod( "getReflectionManager" ).invoke( cfg );
-
-			}
-			catch (Exception e) {
-				reflectionManager = new JavaReflectionManager();
-			}
-		}
-		return reflectionManager;
 	}
 
 	public SearchMapping getProgrammaticMapping() {

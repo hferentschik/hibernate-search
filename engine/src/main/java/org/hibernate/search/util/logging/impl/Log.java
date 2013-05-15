@@ -24,24 +24,11 @@
 
 package org.hibernate.search.util.logging.impl;
 
-import static org.jboss.logging.Logger.Level.ERROR;
-import static org.jboss.logging.Logger.Level.INFO;
-import static org.jboss.logging.Logger.Level.DEBUG;
-import static org.jboss.logging.Logger.Level.TRACE;
-import static org.jboss.logging.Logger.Level.WARN;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.lucene.index.CorruptIndexException;
-import org.hibernate.search.util.impl.AssertionFailure;
-import org.hibernate.annotations.common.reflection.XClass;
-import org.hibernate.search.SearchException;
-import org.hibernate.search.backend.impl.jgroups.JGroupsChannelProvider;
-import org.hibernate.search.backend.spi.WorkType;
-import org.hibernate.search.bridge.FieldBridge;
-import org.hibernate.search.errors.EmptyQueryException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Cause;
 import org.jboss.logging.LogMessage;
@@ -51,6 +38,19 @@ import org.jboss.logging.MessageLogger;
 import org.jgroups.Address;
 import org.jgroups.SuspectedException;
 import org.jgroups.TimeoutException;
+
+import org.hibernate.search.SearchException;
+import org.hibernate.search.backend.impl.jgroups.JGroupsChannelProvider;
+import org.hibernate.search.backend.spi.WorkType;
+import org.hibernate.search.bridge.FieldBridge;
+import org.hibernate.search.errors.EmptyQueryException;
+import org.hibernate.search.util.impl.AssertionFailure;
+
+import static org.jboss.logging.Logger.Level.DEBUG;
+import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.INFO;
+import static org.jboss.logging.Logger.Level.TRACE;
+import static org.jboss.logging.Logger.Level.WARN;
 
 /**
  * Log abstraction layer for Hibernate Search on top of JBoss Logging.
@@ -676,7 +676,7 @@ public interface Log extends BasicLogger {
 
 	@Message(id = 169, value = "FieldBridge '%1$s' does not have a objectToString method: field '%2$s' in '%3$s'" +
 			" The FieldBridge must be a TwoWayFieldBridge or you have to enable the ignoreFieldBridge option when defining a Query" )
-	SearchException fieldBridgeNotTwoWay(Class<? extends FieldBridge> bridgeClass, String fieldName, XClass beanXClass);
+	SearchException fieldBridgeNotTwoWay(Class<? extends FieldBridge> bridgeClass, String fieldName, Class<?> beanClass);
 
 	@LogMessage(level = Level.DEBUG)
 	@Message(id = 170, value = "Starting JGroups channel using configuration '%1$s'")

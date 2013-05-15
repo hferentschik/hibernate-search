@@ -23,6 +23,7 @@
  */
 package org.hibernate.search.bridge.impl;
 
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -34,9 +35,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.hibernate.annotations.common.reflection.ReflectionManager;
-import org.hibernate.annotations.common.reflection.XClass;
-import org.hibernate.annotations.common.reflection.XMember;
 import org.hibernate.search.annotations.ClassBridge;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.NumericField;
@@ -82,12 +80,9 @@ import org.hibernate.search.spatial.SpatialFieldBridgeByQuadTree;
 import org.hibernate.search.spatial.SpatialFieldBridgeByRange;
 import org.hibernate.search.util.impl.AssertionFailure;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
+import org.hibernate.search.util.impl.ReflectionHelper;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
-
-//import org.hibernate.annotations.common.reflection.ReflectionManager;
-//import org.hibernate.annotations.common.reflection.XClass;
-//import org.hibernate.annotations.common.reflection.XMember;
 
 /**
  * This factory is responsible for creating and initializing build-in and custom <i>FieldBridges</i>.
@@ -251,7 +246,7 @@ public final class BridgeFactory {
 	 * @param clazz the {@code XClass} on which the annotation is defined on
 	 * @return Returns the specified {@code FieldBridge} instance
 	 */
-	public static FieldBridge extractType(ClassBridge cb, XClass clazz) {
+	public static FieldBridge extractType(ClassBridge cb, Class<?> clazz) {
 		FieldBridge bridge = null;
 
 		if ( cb != null ) {
@@ -302,7 +297,7 @@ public final class BridgeFactory {
 	 * @param latitudeField a {@link java.lang.String} object.
 	 * @param longitudeField a {@link java.lang.String} object.
 	 */
-	public static FieldBridge buildSpatialBridge(Spatial spatial, XClass clazz, String latitudeField, String longitudeField) {
+	public static FieldBridge buildSpatialBridge(Spatial spatial, Class<?> clazz, String latitudeField, String longitudeField) {
 		FieldBridge bridge;
 		try {
 			bridge = buildSpatialBridge( spatial, latitudeField, longitudeField );
@@ -324,7 +319,7 @@ public final class BridgeFactory {
 	 * @param member the {@code XMember} on which the annotation is defined on
 	 * @return Returns the {@code SpatialFieldBridge} instance
 	 */
-	public static FieldBridge buildSpatialBridge(Spatial spatial, XMember member) {
+	public static FieldBridge buildSpatialBridge(Spatial spatial, Member member) {
 		FieldBridge bridge;
 		try {
 			bridge = buildSpatialBridge( spatial, null, null );
@@ -371,7 +366,7 @@ public final class BridgeFactory {
 		return bridge;
 	}
 
-	public static FieldBridge guessType(Field field, NumericField numericField, XMember member, ReflectionManager reflectionManager) {
+	public static FieldBridge guessType(Field field, NumericField numericField, Member member) {
 		FieldBridge bridge;
 		org.hibernate.search.annotations.FieldBridge bridgeAnn;
 		//@Field bridge has priority over @FieldBridge
@@ -379,49 +374,49 @@ public final class BridgeFactory {
 			bridgeAnn = field.bridge();
 		}
 		else {
-			bridgeAnn = member.getAnnotation( org.hibernate.search.annotations.FieldBridge.class );
+			bridgeAnn = ReflectionHelper.getAnnotation( member, org.hibernate.search.annotations.FieldBridge.class );
 		}
 		if ( bridgeAnn != null ) {
-			bridge = doExtractType( bridgeAnn, member, reflectionManager );
+			bridge = doExtractType( bridgeAnn, member );
 		}
-		else if ( member.isAnnotationPresent( org.hibernate.search.annotations.DateBridge.class ) ) {
-			Resolution resolution = member.getAnnotation( org.hibernate.search.annotations.DateBridge.class )
+		else if ( ReflectionHelper.isAnnotationPresent(member, org.hibernate.search.annotations.DateBridge.class ) ) {
+			Resolution resolution = ReflectionHelper.getAnnotation( member, org.hibernate.search.annotations.DateBridge.class )
 					.resolution();
-			bridge = guessDateFieldBridge( member, reflectionManager, resolution );
+			bridge = guessDateFieldBridge( member, resolution );
 		}
-		else if ( member.isAnnotationPresent( org.hibernate.search.annotations.CalendarBridge.class ) ) {
-			Resolution resolution = member.getAnnotation( org.hibernate.search.annotations.CalendarBridge.class )
+		else if ( ReflectionHelper.isAnnotationPresent(member, org.hibernate.search.annotations.CalendarBridge.class ) ) {
+			Resolution resolution = ReflectionHelper.getAnnotation(member, org.hibernate.search.annotations.CalendarBridge.class )
 					.resolution();
-			bridge = guessCalendarFieldBridge( member, reflectionManager, resolution );
+			bridge = guessCalendarFieldBridge( member, resolution );
 		}
-		else if ( member.isAnnotationPresent( org.hibernate.search.annotations.TikaBridge.class ) ) {
-			org.hibernate.search.annotations.TikaBridge annotation = member.getAnnotation( org.hibernate.search.annotations.TikaBridge.class );
+		else if ( ReflectionHelper.isAnnotationPresent(member, org.hibernate.search.annotations.TikaBridge.class ) ) {
+			org.hibernate.search.annotations.TikaBridge annotation = ReflectionHelper.getAnnotation( member,org.hibernate.search.annotations.TikaBridge.class );
 			bridge = createTikaBridge( annotation );
 		}
 		else if ( numericField != null ) {
-			bridge = guessNumericFieldBridge( member, reflectionManager );
+			bridge = guessNumericFieldBridge( member );
 		}
-		else if ( member.isAnnotationPresent( org.hibernate.search.annotations.Spatial.class ) ) {
-			Spatial spatialAnn = member.getAnnotation( org.hibernate.search.annotations.Spatial.class );
+		else if ( ReflectionHelper.isAnnotationPresent(member,  org.hibernate.search.annotations.Spatial.class ) ) {
+			Spatial spatialAnn = ReflectionHelper.getAnnotation( member, org.hibernate.search.annotations.Spatial.class );
 			bridge = buildSpatialBridge( spatialAnn, member );
 		}
 		else {
 			//find in built-ins
-			XClass returnType = member.getType();
+			Class<?> returnType = ReflectionHelper.getElementClass( member );
 			bridge = builtInBridges.get( returnType.getName() );
 			if ( bridge == null && returnType.isEnum() ) {
 				//we return one enum type bridge instance per property as it is customized per ReturnType
 				@SuppressWarnings("unchecked")
 				final EnumBridge enumBridge = new EnumBridge();
-				populateReturnType( reflectionManager.toClass( member.getType() ), EnumBridge.class, enumBridge );
+				populateReturnType( ReflectionHelper.getElementClass( member ), EnumBridge.class, enumBridge );
 				bridge = new TwoWayString2FieldBridgeAdaptor( enumBridge );
 			}
 			if ( bridge == null && isAnnotatedWithIndexEmbedded( member ) ) {
-				bridge = guessEmbeddedFieldBridge( member, reflectionManager );
+				bridge = guessEmbeddedFieldBridge( member );
 			}
 		}
 		if ( bridge == null ) {
-			throw LOG.unableToGuessFieldBridge( member.getType().getName(), member.getName() );
+			throw LOG.unableToGuessFieldBridge( ReflectionHelper.getElementClass( member ).getName(), member.getName() );
 		}
 		return bridge;
 	}
@@ -470,110 +465,98 @@ public final class BridgeFactory {
 		}
 	}
 
-	private static FieldBridge guessEmbeddedFieldBridge(XMember member, ReflectionManager reflectionManager) {
-		if ( isIterable( reflectionManager, member ) ) {
+	private static FieldBridge guessEmbeddedFieldBridge(Member member) {
+		if ( isIterable( member ) ) {
 			return ITERABLE_BRIDGE;
 		}
 
-		if ( member.isArray() ) {
+		if ( ReflectionHelper.isArray( member ) ) {
 			return ARRAY_BRIDGE;
 		}
 
-		if ( isMap( member ) ) {
+		if ( ReflectionHelper.isMap( member ) ) {
 			return MAP_BRIDGE;
 		}
 
 		return null;
 	}
 
-	private static FieldBridge guessNumericFieldBridge(XMember member, ReflectionManager reflectionManager) {
+	private static FieldBridge guessNumericFieldBridge(Member member) {
 		if ( isNotAnnotatedWithIndexEmbedded( member ) ) {
-			return numericBridges.get( member.getType().getName() );
+			return numericBridges.get( ReflectionHelper.getElementClass( member ).getName() );
 		}
 
-		if ( isIterable( reflectionManager, member ) ) {
+		if ( isIterable( member ) ) {
 			return NUMERIC_ITERABLE_BRIDGE;
 		}
 
-		if ( member.isArray() ) {
+		if ( ReflectionHelper.isArray( member ) ) {
 			return NUMERIC_ARRAY_BRIDGE;
 		}
 
-		if ( isMap( member ) ) {
+		if ( ReflectionHelper.isMap( member ) ) {
 			return NUMERIC_MAP_BRIDGE;
 		}
 
 		return null;
 	}
 
-	private static FieldBridge guessCalendarFieldBridge(XMember member, ReflectionManager reflectionManager, Resolution resolution) {
+	private static FieldBridge guessCalendarFieldBridge(Member member, Resolution resolution) {
 		if ( isNotAnnotatedWithIndexEmbedded( member ) ) {
 			return getCalendarField( resolution );
 		}
 
-		if ( isIterable( reflectionManager, member ) ) {
+		if ( isIterable( member ) ) {
 			return getIterableCalendarField( resolution );
 		}
 
-		if ( member.isArray() ) {
+		if ( ReflectionHelper.isArray( member ) ) {
 			return getArrayCalendarField( resolution );
 		}
 
-		if ( isMap( member ) ) {
+		if ( ReflectionHelper.isMap( member ) ) {
 			return getMapCalendarField( resolution );
 		}
 
 		return null;
 	}
 
-	private static FieldBridge guessDateFieldBridge(XMember member, ReflectionManager reflectionManager, Resolution resolution) {
+	private static FieldBridge guessDateFieldBridge(Member member, Resolution resolution) {
 		if ( isNotAnnotatedWithIndexEmbedded( member ) ) {
 			return getDateField( resolution );
 		}
 
-		if ( isIterable( reflectionManager, member ) ) {
+		if ( isIterable( member ) ) {
 			return getIterableDateField( resolution );
 		}
 
-		if ( member.isArray() ) {
+		if ( ReflectionHelper.isArray( member )) {
 			return getArrayDateField( resolution );
 		}
 
-		if ( isMap( member ) ) {
+		if ( ReflectionHelper.isMap( member ) ) {
 			return getMapDateField( resolution );
 		}
 
 		return null;
 	}
 
-	private static boolean isNotAnnotatedWithIndexEmbedded(XMember member) {
+	private static boolean isNotAnnotatedWithIndexEmbedded(Member member) {
 		return !isAnnotatedWithIndexEmbedded( member );
 	}
 
-	private static boolean isAnnotatedWithIndexEmbedded(XMember member) {
-		return member.isAnnotationPresent( org.hibernate.search.annotations.IndexedEmbedded.class );
+	private static boolean isAnnotatedWithIndexEmbedded(Member member) {
+		return ReflectionHelper.isAnnotationPresent( member, org.hibernate.search.annotations.IndexedEmbedded.class );
 	}
 
-	private static boolean isIterable(ReflectionManager reflectionManager, XMember member) {
-		Class<?> typeClass = reflectionManager.toClass( member.getType() );
+	private static boolean isIterable(Member member) {
+		Class<?> typeClass = ReflectionHelper.getElementClass( member );
 		return Iterable.class.isAssignableFrom( typeClass );
 	}
 
-	private static boolean isMap(XMember member) {
-		if ( member.isCollection() ) {
-			return Map.class.equals( member.getCollectionClass() );
-		}
-
-		return false;
+	private static FieldBridge doExtractType(org.hibernate.search.annotations.FieldBridge bridgeAnnotation, Member member) {
+		return doExtractType( bridgeAnnotation, member.getName(), ReflectionHelper.getElementClass( member ));
 	}
-
-	private static FieldBridge doExtractType(
-			org.hibernate.search.annotations.FieldBridge bridgeAnn,
-			XMember member,
-			ReflectionManager reflectionManager) {
-		return doExtractType( bridgeAnn, member.getName(), reflectionManager.toClass( member.getType() ) );
-	}
-
 
 	private static FieldBridge doExtractType(
 			org.hibernate.search.annotations.FieldBridge bridgeAnn,
@@ -795,14 +778,12 @@ public final class BridgeFactory {
 	 *
 	 * @param fieldBridge the field bridge annotation
 	 * @param appliedOnType the type the bridge is applied on
-	 * @param reflectionManager The reflection manager instance
 	 * @return a TwoWayFieldBridge instance if the Field Bridge is an instance of a TwoWayFieldBridge.
 	 * @throws org.hibernate.search.SearchException if the FieldBridge passed in is not an instance of a TwoWayFieldBridge.
 	 */
 	public static TwoWayFieldBridge extractTwoWayType(org.hibernate.search.annotations.FieldBridge fieldBridge,
-													XClass appliedOnType,
-													ReflectionManager reflectionManager) {
-		FieldBridge fb = extractType( fieldBridge, appliedOnType, reflectionManager );
+													Class<?> appliedOnType) {
+		FieldBridge fb = extractType( fieldBridge, appliedOnType);
 		if ( fb instanceof TwoWayFieldBridge ) {
 			return (TwoWayFieldBridge) fb;
 		}
@@ -817,19 +798,17 @@ public final class BridgeFactory {
 	 *
 	 * @param fieldBridgeAnnotation the FieldBridge annotation
 	 * @param appliedOnType the type the bridge is applied on
-	 * @param reflectionManager The reflection manager instance
 	 * @return FieldBridge
 	 */
 	public static FieldBridge extractType(org.hibernate.search.annotations.FieldBridge fieldBridgeAnnotation,
-										XClass appliedOnType,
-										ReflectionManager reflectionManager) {
+										Class<?> appliedOnType) {
 		FieldBridge bridge = null;
 
 		if ( fieldBridgeAnnotation != null ) {
 			bridge = doExtractType(
 					fieldBridgeAnnotation,
 					appliedOnType.getName(),
-					reflectionManager.toClass( appliedOnType )
+					appliedOnType
 			);
 		}
 
