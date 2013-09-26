@@ -152,14 +152,14 @@ finally {
       </listitem>
 
       <listitem>
-        <para>Data is naturally segmented by customer, region or other
+        <para>Data is naturally segmented by customer, region, language or other
         application parameter and the index should be split according to these
         segments. This is a use case for dynamic sharding.</para>
       </listitem>
     </itemizedlist>
 
     <tip>
-      By default sharding is not enabled.
+      <para>By default sharding is not enabled.</para>
     </tip>
 
     <section>
@@ -184,12 +184,18 @@ finally {
       <constant>hibernate.search.[default|&lt;indexName&gt;].sharding_strategy</constant>
       property to the fully qualified class name of your custom
       <classname>IndexShardingStrategy</classname>.</para>
+
+      <example id="example-index-sharding-strategy">
+        <title>Registering a custom IndexShardingStrategy</title>
+
+        <programlisting>hibernate.search.[default|&lt;indexName&gt;].sharding_strategy = my.custom.RandomShardingStrategy</programlisting>
+      </example>
     </section>
 
     <section id="advanced-features-dynamic-sharding">
       <title>Dynamic sharding</title>
 
-      <para>Dynamic sharding allows you to manage your shards yourselfs and
+      <para>Dynamic sharding allows you to manage the shards yourself and
       even create new shards on the fly. To do so you need to implement
       <classname>ShardIdentifierProvider</classname> and set the
       <constant>hibernate.search.[default|&lt;indexName&gt;].sharding_strategy</constant>
@@ -261,7 +267,7 @@ finally {
       create the initial set of shard identifiers during the
       <methodname>initialize</methodname> call. How this is done will depend
       on the use case. However, a common case in combination with Hibernate
-      ORM is, that the initial shard set is defined by the the distinct values
+      ORM, is that the initial shard set is defined by the the distinct values
       of a given database column. <xref
       linkend="example-custom-shard-identifier-provider"/> shows how to handle
       such a case. <classname>AnimalShardIdentifierProvider</classname> makes
@@ -610,7 +616,8 @@ hibernate.search.org.hibernate.search.test.shards.Animal.indexName = Animal</pro
     <note>
       <para>The use of <classname>@Similarity</classname> which was used to
       configure the similarity on a class level is deprecated since Hibernate
-      Search 4.4.</para>
+      Search 4.4. Instead of using the annotation use the configuration
+      property.</para>
     </note>
   </section>
 </chapter>
