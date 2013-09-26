@@ -208,37 +208,40 @@ public class DynamicShardingTest extends SearchTestCaseJUnit4 {
 	}
 
 	public static class AnimalShardIdentifierProvider implements ShardIdentifierProvider {
-		private Set<String> shards = Collections.synchronizedSet( new HashSet<String>() );
+
+		private volatile Set<String> knownShards = Collections.emptySet();
 
 		@Override
 		public void initialize(Properties properties, BuildContext buildContext) {
 			ServiceManager serviceManager = buildContext.getServiceManager();
-			Session session = null;
+			Session session = serviceManager.requestService( HibernateSessionServiceProvider.class, buildContext );
 
 			try {
-				session = serviceManager.requestService( HibernateSessionServiceProvider.class, buildContext );
-
 				Criteria initialShardsCriteria = session.createCriteria( Animal.class );
 				initialShardsCriteria.setProjection( Projections.distinct( Property.forName( "type" ) ) );
 
 				@SuppressWarnings("unchecked")
 				List<String> initialTypes = (List<String>) initialShardsCriteria.list();
-				for ( String type : initialTypes ) {
-					shards.add( type );
-				}
+				knownShards = Collections.unmodifiableSet( new HashSet<String>( initialTypes ) );
 			}
 			finally {
-				if ( session != null ) {
-					session.close();
-				}
+				session.close();
 			}
+		}
+
+		private synchronized void addShard(String shardNames) {
+			HashSet<String> newCopy = new HashSet<String>( knownShards );
+			newCopy.add( shardNames );
+			knownShards = Collections.unmodifiableSet( newCopy );
 		}
 
 		@Override
 		public String getShardIdentifier(Class<?> entityType, Serializable id, String idAsString, Document document) {
 			if ( entityType.equals( Animal.class ) ) {
 				String type = document.getFieldable( "type" ).stringValue();
-				shards.add( type );
+				if ( ! knownShards.contains( type ) ) {
+					addShard( type );
+				}
 				return type;
 			}
 			throw new RuntimeException( "Animal expected but found " + entityType );
@@ -251,7 +254,7 @@ public class DynamicShardingTest extends SearchTestCaseJUnit4 {
 
 		@Override
 		public Set<String> getAllShardIdentifiers() {
-			return Collections.unmodifiableSet( shards );
+			return knownShards;
 		}
 	}
 }

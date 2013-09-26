@@ -204,38 +204,42 @@ finally {
       example.<example id="example-custom-shard-identifier-provider">
           <title>Custom <classname>ShardidentiferProvider</classname></title>
 
-          <programlisting>public static class AnimalShardIdentifierProvider implements ShardIdentifierProvider {
-   private Set&lt;String&gt; shards = Collections.synchronizedSet( new HashSet&lt;String&gt;() );
+          <programlisting>public class AnimalShardIdentifierProvider implements ShardIdentifierProvider {
+   private volatile Set&lt;String&gt; knownShards = Collections.emptySet();
 
    @Override
    public void initialize(Properties properties, BuildContext buildContext) {
       ServiceManager serviceManager = buildContext.getServiceManager();
-      Session session = null;
+      Session session = serviceManager.requestService( HibernateSessionServiceProvider.class,
+                                                  buildContext );
 
       try {
-         session = serviceManager.requestService( HibernateSessionServiceProvider.class, buildContext );
-
          Criteria initialShardsCriteria = session.createCriteria( Animal.class );
-         initialShardsCriteria.setProjection( Projections.distinct( Property.forName( "type" ) ) );
+         initialShardsCriteria.setProjection(
+                              Projections.distinct( Property.forName( "type" ) ) );
 
-         @SuppressWarnings("unchecked")
          List&lt;String&gt; initialTypes = (List&lt;String&gt;) initialShardsCriteria.list();
-         for ( String type : initialTypes ) {
-            shards.add( type );
-         }
+         knownShards = Collections.unmodifiableSet( new HashSet&lt;String&gt;( initialTypes ) );
       }
       finally {
-         if ( session != null ) {
-            session.close();
-         }
+         session.close();
       }
    }
 
+   private synchronized void addShard(String shardNames) {
+      HashSet&lt;String&gt; newCopy = new HashSet&lt;String&gt;( knownShards );
+      newCopy.add( shardNames );
+      knownShards = Collections.unmodifiableSet( newCopy );
+   }
+
    @Override
-   public String getShardIdentifier(Class&lt;?&gt; entityType, Serializable id, String idAsString, Document document) {
+   public String getShardIdentifier(Class&lt;?&gt; entityType, Serializable id,
+                 String idAsString, Document document) {
       if ( entityType.equals( Animal.class ) ) {
          String type = document.getFieldable( "type" ).stringValue();
-         shards.add( type );
+         if ( ! knownShards.contains( type ) ) {
+            addShard( type );
+         }
          return type;
       }
       throw new RuntimeException( "Animal expected but found " + entityType );
@@ -248,7 +252,7 @@ finally {
 
    @Override
    public Set&lt;String&gt; getAllShardIdentifiers() {
-      return Collections.unmodifiableSet( shards );
+      return knownShards;
    }
 }</programlisting>
         </example>The are several things happening in
