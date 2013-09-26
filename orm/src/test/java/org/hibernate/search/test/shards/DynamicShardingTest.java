@@ -23,10 +23,11 @@ package org.hibernate.search.test.shards;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
@@ -207,30 +208,37 @@ public class DynamicShardingTest extends SearchTestCaseJUnit4 {
 	}
 
 	public static class AnimalShardIdentifierProvider implements ShardIdentifierProvider {
-		private ConcurrentHashMap<String, String> shards = new ConcurrentHashMap<String, String>();
+		private Set<String> shards = Collections.synchronizedSet( new HashSet<String>() );
 
 		@Override
 		public void initialize(Properties properties, BuildContext buildContext) {
 			ServiceManager serviceManager = buildContext.getServiceManager();
-			Session session = serviceManager.requestService( HibernateSessionServiceProvider.class, buildContext );
+			Session session = null;
 
-			Criteria initialShardsCriteria = session.createCriteria( Animal.class );
-			initialShardsCriteria.setProjection( Projections.distinct( Property.forName( "type" ) ) );
+			try {
+				session = serviceManager.requestService( HibernateSessionServiceProvider.class, buildContext );
 
-			@SuppressWarnings("unchecked")
-			List<String> initialTypes = (List<String>) initialShardsCriteria.list();
-			for ( String type : initialTypes ) {
-				shards.put( type, type );
+				Criteria initialShardsCriteria = session.createCriteria( Animal.class );
+				initialShardsCriteria.setProjection( Projections.distinct( Property.forName( "type" ) ) );
+
+				@SuppressWarnings("unchecked")
+				List<String> initialTypes = (List<String>) initialShardsCriteria.list();
+				for ( String type : initialTypes ) {
+					shards.add( type );
+				}
 			}
-
-			session.close();
+			finally {
+				if ( session != null ) {
+					session.close();
+				}
+			}
 		}
 
 		@Override
 		public String getShardIdentifier(Class<?> entityType, Serializable id, String idAsString, Document document) {
 			if ( entityType.equals( Animal.class ) ) {
 				String type = document.getFieldable( "type" ).stringValue();
-				shards.put( type, type );
+				shards.add( type );
 				return type;
 			}
 			throw new RuntimeException( "Animal expected but found " + entityType );
@@ -243,7 +251,7 @@ public class DynamicShardingTest extends SearchTestCaseJUnit4 {
 
 		@Override
 		public Set<String> getAllShardIdentifiers() {
-			return shards.keySet();
+			return Collections.unmodifiableSet( shards );
 		}
 	}
 }
