@@ -67,6 +67,7 @@ import org.hibernate.event.spi.EventSource;
 import org.hibernate.jdbc.ReturningWork;
 import org.hibernate.loader.custom.CustomQuery;
 import org.hibernate.persister.entity.EntityPersister;
+import org.hibernate.procedure.ProcedureCall;
 import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.FullTextSharedSessionBuilder;
@@ -866,6 +867,30 @@ public class FullTextSessionImpl implements FullTextSession, SessionImplementor 
 	@Override
 	public SimpleNaturalIdLoadAccess bySimpleNaturalId(Class entityClass) {
 		return session.bySimpleNaturalId( entityClass );
+	}
+
+	@Override
+	public ProcedureCall createStoredProcedureCall(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ProcedureCall createStoredProcedureCall(String arg0, Class... arg1) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ProcedureCall createStoredProcedureCall(String arg0, String... arg1) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ProcedureCall getNamedProcedureCall(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
