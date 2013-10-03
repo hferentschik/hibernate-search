@@ -21,15 +21,19 @@ package org.hibernate.search.test.engine.optimizations;
 
 import java.lang.annotation.ElementType;
 
+import javax.persistence.EntityManagerFactory;
+
 import org.hibernate.Transaction;
 
 import org.hibernate.collection.internal.PersistentBag;
 import org.hibernate.collection.internal.PersistentSet;
+import org.hibernate.ejb.Ejb3Configuration;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.cfg.EntityMapping;
 import org.hibernate.search.cfg.SearchMapping;
 import org.hibernate.search.test.util.FullTextSessionBuilder;
 import org.hibernate.search.test.util.TestForIssue;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -46,6 +50,14 @@ import static org.junit.Assert.assertTrue;
  */
 @TestForIssue( jiraKey = "HSEARCH-679")
 public class CollectionUpdateEventTest {
+
+	@BeforeClass
+	public static void beforeClass() {
+		Ejb3Configuration cfg = new Ejb3Configuration();
+		Ejb3Configuration configured = cfg.configure( "EntityManagerTestPU", null );
+		EntityManagerFactory factory = configured.buildEntityManagerFactory();
+		factory.close();
+	}
 
 	/**
 	 * If the top level class has a class bridge or dynamic boost, then we can't safely
@@ -99,7 +111,7 @@ public class CollectionUpdateEventTest {
 				assertFalse( "consumers should not be initialized", consumers.wasInitialized() );
 				assertFalse( "catalogItems should not be initialized", consumers.wasInitialized() );
 
-				updateCatalogsCollection( fullTextSession, catalog );
+				updateCatalogsCollection( fullTextSession, catalog, usingClassBridge );
 
 				if ( ( usingClassBridge || usingClassBridgeOnEmbedded ) && depth > 1 ) {
 					assertTrue( "catalogItems should have been initialized", catalogItems.wasInitialized() );
@@ -187,7 +199,7 @@ public class CollectionUpdateEventTest {
 	/**
 	 * Update a non-indexed collection of an entity contained in a collection. No indexing work should be created.
 	 */
-	private void updateCatalogsCollection(FullTextSession fullTextSession, Catalog catalog) {
+	private void updateCatalogsCollection(FullTextSession fullTextSession, Catalog catalog, boolean withClassBridge) {
 		final Transaction transaction = fullTextSession.beginTransaction();
 
 		Consumer consumer = new Consumer();
@@ -196,9 +208,12 @@ public class CollectionUpdateEventTest {
 		fullTextSession.persist( consumer );
 
 		catalog.getConsumers().add( consumer );
+
+		if ( withClassBridge ) {
+			catalog.getCatalogItems().add( new CatalogItem() );
+		}
 		fullTextSession.merge( catalog );
 
 		transaction.commit();
 	}
-
 }

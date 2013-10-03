@@ -51,7 +51,7 @@ public class Catalog {
 	@Column(length = 255)
 	private String name;
 
-	@OneToMany(mappedBy = "catalog", cascade = { CascadeType.REMOVE, CascadeType.REFRESH }, fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "catalog", cascade = { CascadeType.ALL, CascadeType.REFRESH }, fetch = FetchType.LAZY)
 	private Set<CatalogItem> catalogItems = new HashSet<CatalogItem>();
 
 	@ManyToMany(fetch = FetchType.LAZY, mappedBy = "catalogs", cascade = { CascadeType.PERSIST })

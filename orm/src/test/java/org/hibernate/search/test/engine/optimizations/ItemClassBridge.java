@@ -22,11 +22,15 @@ package org.hibernate.search.test.engine.optimizations;
 import org.apache.lucene.document.Document;
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.LuceneOptions;
+import org.hibernate.search.util.logging.impl.Log;
+import org.hibernate.search.util.logging.impl.LoggerFactory;
 
 /**
  * @author Sanne Grinovero <sanne@hibernate.org> (C) 2011 Red Hat Inc.
  */
 public class ItemClassBridge implements FieldBridge {
+
+	private static final Log log = LoggerFactory.make();
 
 	@Override
 	public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
@@ -35,7 +39,8 @@ public class ItemClassBridge implements FieldBridge {
 		// but the fact a ClassBridge is defined should prevent
 		// the engine from applying optimizations based on assumptions some field is not going
 		// to affect the index state.
+		Item item = (Item) value;
+		luceneOptions.addFieldToDocument( "foo", item.getName(), document );
+		log.info( "Calling bridge for: " + value );
 	}
-
-
 }
