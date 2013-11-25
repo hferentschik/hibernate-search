@@ -1222,7 +1222,12 @@ public class AnnotationMetadataProvider implements MetadataProvider {
 			localPrefix += member.getName() + '.';
 		}
 		else {
-			localPrefix += indexedEmbeddedAnnotation.prefix();
+			// HSEARCH-1442 - we need to support both w/ and w/o trailing '.' (HF)
+			String configuredPrefix = indexedEmbeddedAnnotation.prefix();
+			if ( !configuredPrefix.endsWith( "." ) ) {
+				configuredPrefix += ".";
+			}
+			localPrefix += configuredPrefix;
 		}
 		return localPrefix;
 	}
