@@ -175,6 +175,69 @@
                     </bytecodeInjections>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <configuration>
+                    <instructions>
+                        <Import-Package>
+                            org.hibernate.annotations.common.*;version="[4.0.4,4.1.0)",
+                            org.apache.lucene.*;version="[${luceneVersion},4.7.0)",
+                            org.jboss.logging.*;version="[3.1.0,4.0.0)",
+                            org.apache.tika.*;version="[${tikaVersion}, 1.5)";resolution:=optional,
+                            javax.transaction.*;version="0";resolution:=optional
+                        </Import-Package>
+                        <Export-Package>
+                            org.hibernate.search;version="${project.version}",
+                            org.hibernate.search.analyzer;version="${project.version}",
+                            org.hibernate.search.annotations;version="${project.version}",
+                            org.hibernate.search.backend;version="${project.version}",
+                            org.hibernate.search.backend.spi;version="${project.version}",
+                            org.hibernate.search.batchindexing;version="${project.version}",
+                            org.hibernate.search.bridge;version="${project.version}",
+                            org.hibernate.search.bridge.builtin;version="${project.version}",
+                            org.hibernate.search.bridge.spi;version="${project.version}",
+                            org.hibernate.search.cfg;version="${project.version}",
+                            org.hibernate.search.cfg.spi;version="${project.version}",
+                            org.hibernate.search.engine;version="${project.version}",
+                            org.hibernate.search.engine.service.classloading.spi;version="${project.version}",
+                            org.hibernate.search.engine.service.spi="${project.version}",
+                            org.hibernate.search.errors="${project.version}",
+                            org.hibernate.search.exception="${project.version}",
+                            org.hibernate.search.filter="${project.version}",
+                            org.hibernate.search.indexes="${project.version}",
+                            org.hibernate.search.indexes.interceptor="${project.version}",
+                            org.hibernate.search.indexes.serialization.spi="${project.version}",
+                            org.hibernate.search.indexes.spi="${project.version}",
+                            org.hibernate.search.jmx="${project.version}",
+                            org.hibernate.search.metadata="${project.version}",
+                            org.hibernate.search.query="${project.version}",
+                            org.hibernate.search.query.collector="${project.version}",
+                            org.hibernate.search.query.dsl="${project.version}",
+                            org.hibernate.search.query.engine="${project.version}",
+                            org.hibernate.search.query.engine.spi="${project.version}",
+                            org.hibernate.search.query.facet="${project.version}",
+                            org.hibernate.search.query.fieldcache="${project.version}",
+                            org.hibernate.search.spatial="${project.version}",
+                            org.hibernate.search.spi="${project.version}",
+                            org.hibernate.search.stat="${project.version}",
+                            org.hibernate.search.stat.spi="${project.version}",
+                            org.hibernate.search.store="${project.version}",
+                            org.hibernate.search.store.optimization="${project.version}",
+                            org.hibernate.search.util="${project.version}"
+                        </Export-Package>
+                    </instructions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <profiles>
