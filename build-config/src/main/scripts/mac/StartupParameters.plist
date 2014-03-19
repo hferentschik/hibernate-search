@@ -1,0 +1,6 @@
+{
+    Description = "Add multicast route to loop-back interface";
+    Provides = ("AddRoutes");
+    Requires = ("Network");
+    OrderPreference = "None";
+}

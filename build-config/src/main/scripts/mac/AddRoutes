@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Set static routing tables
+
+. /etc/rc.common
+
+StartService ()
+{
+    sleep 10
+    ConsoleMessage "Adding Static Routing Table"
+    sudo /sbin/route add -net 224.0.0.0/4 127.0.0.1
+}
+
+StopService ()
+{
+    return 0
+}
+
+StopService ()
+{
+    return 0
+}
+
+RestartService ()
+{
+    return 0
+}
+
+RunService "$1"
