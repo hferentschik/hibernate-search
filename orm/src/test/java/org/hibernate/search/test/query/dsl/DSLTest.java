@@ -23,11 +23,6 @@
  */
 package org.hibernate.search.test.query.dsl;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -36,31 +31,32 @@ import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
+import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
+import org.apache.lucene.analysis.core.StopFilterFactory;
+import org.apache.lucene.analysis.ngram.NGramFilterFactory;
+import org.apache.lucene.analysis.snowball.SnowballPorterFilterFactory;
+import org.apache.lucene.analysis.standard.StandardFilterFactory;
+import org.apache.lucene.analysis.standard.StandardTokenizerFactory;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
-import org.apache.lucene.analysis.ngram.NGramFilterFactory;
-import org.apache.lucene.analysis.snowball.SnowballPorterFilterFactory;
-import org.apache.lucene.analysis.standard.StandardFilterFactory;
-import org.apache.lucene.analysis.standard.StandardTokenizerFactory;
-import org.apache.lucene.analysis.core.StopFilterFactory;
 import org.fest.assertions.Condition;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+
 import org.hibernate.cfg.Configuration;
-import org.hibernate.search.cfg.Environment;
 import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
-import org.hibernate.search.engine.ProjectionConstants;
 import org.hibernate.search.Search;
-import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.annotations.Factory;
 import org.hibernate.search.bridge.builtin.impl.String2FieldBridgeAdaptor;
+import org.hibernate.search.cfg.Environment;
 import org.hibernate.search.cfg.SearchMapping;
+import org.hibernate.search.engine.ProjectionConstants;
+import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.query.dsl.QueryBuilder;
 import org.hibernate.search.query.dsl.Unit;
 import org.hibernate.search.query.dsl.impl.ConnectedTermMatchingContext;
@@ -73,6 +69,11 @@ import org.hibernate.search.util.logging.impl.LoggerFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Emmanuel Bernard
@@ -1138,20 +1139,6 @@ public class DSLTest extends SearchTestBase {
 				assertThat( element[1] ).as( "All scores should be equal as the same brand is used" ).isEqualTo( score );
 			}
 			outputQueryAndResults( outputLogs, decaffInstance, mltQuery, entityResults );
-
-			// using indexed embedded id from document
-			try {
-				qb
-						.moreLikeThis()
-						.comparingField( "brand.id" )
-						.toEntityWithId( decaffInstance.getId() )
-						.createQuery();
-			}
-			catch (SearchException e) {
-				assertThat( e.getMessage() )
-						.as( "Field cannot be used" )
-						.contains( "brand.id" );
-			}
 		}
 		finally {
 			transaction.commit();

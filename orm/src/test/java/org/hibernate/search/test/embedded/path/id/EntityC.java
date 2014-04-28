@@ -35,6 +35,7 @@ import org.hibernate.search.annotations.IndexedEmbedded;
 class EntityC {
 
 	@Id
+	@Field
 	public String id;
 
 	@OneToOne(mappedBy = "indexed")

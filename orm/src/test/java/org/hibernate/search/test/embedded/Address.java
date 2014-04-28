@@ -33,8 +33,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
 import org.hibernate.annotations.Target;
+import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.ContainedIn;
-import org.hibernate.search.annotations.DocumentId;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.annotations.IndexedEmbedded;
@@ -48,7 +48,7 @@ import org.hibernate.search.annotations.IndexedEmbedded;
 public class Address {
 	@Id
 	@GeneratedValue
-	@DocumentId
+	@Field(analyze = Analyze.NO)
 	private Long id;
 
 	@Field

@@ -38,10 +38,12 @@ import org.hibernate.Transaction;
 import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
+import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.DocumentId;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.annotations.IndexedEmbedded;
+import org.hibernate.search.annotations.Store;
 import org.hibernate.search.test.SearchTestBase;
 import org.hibernate.search.testsupport.TestForIssue;
 import org.junit.Test;
@@ -190,7 +192,9 @@ public class UpdateIndexedEmbeddedCollectionTest extends SearchTestBase {
 		public Truck() {
 		}
 
-		@Id @GeneratedValue @DocumentId
+		@Id
+		@GeneratedValue
+		@Field(store = Store.YES, analyze = Analyze.NO)
 		public Long getId() { return id; }
 		public void setId(Long id) { this.id = id; }
 		private Long id;

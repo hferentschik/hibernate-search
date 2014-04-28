@@ -26,7 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToOne;
 
 import org.hibernate.search.annotations.ContainedIn;
-import org.hibernate.search.annotations.DocumentId;
+import org.hibernate.search.annotations.Field;
 
 /**
  * @author Davide D'Alto
@@ -38,7 +38,7 @@ class DocumentEntity {
 	@GeneratedValue
 	long id;
 
-	@DocumentId
+	@Field
 	String documentId;
 
 	@OneToOne

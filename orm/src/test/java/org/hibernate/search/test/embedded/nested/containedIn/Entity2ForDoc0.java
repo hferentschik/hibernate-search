@@ -30,6 +30,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Version;
 
+import org.hibernate.search.annotations.Analyze;
+import org.hibernate.search.annotations.Field;
+
 /**
  * @author grolland
  */
@@ -43,6 +46,7 @@ public class Entity2ForDoc0 {
 	@Id
 	@GeneratedValue //(generator = "ids_generator2", strategy = GenerationType.SEQUENCE)
 	@Column(name = "universalid")//"uid" is a keywork in Oracle
+	@Field(analyze = Analyze.NO)
 	private long uid;
 
 	@Version

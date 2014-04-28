@@ -26,6 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToOne;
 
 import org.hibernate.search.annotations.ContainedIn;
+import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.IndexedEmbedded;
 
 /**
@@ -36,6 +37,7 @@ class EntityB {
 
 	@Id
 	@GeneratedValue
+	@Field
 	public int id;
 
 	@OneToOne

@@ -24,8 +24,6 @@
 
 package org.hibernate.search.engine.metadata.impl;
 
-import static org.hibernate.search.engine.impl.AnnotationProcessingHelper.getFieldName;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,17 +37,11 @@ import java.util.TreeSet;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Field;
-import org.hibernate.search.annotations.ProvidedId;
-import org.hibernate.search.bridge.builtin.impl.TwoWayString2FieldBridgeAdaptor;
-import org.hibernate.search.engine.service.classloading.spi.ClassLoadingException;
-import org.hibernate.search.exception.AssertionFailure;
 import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.annotations.common.reflection.XAnnotatedElement;
 import org.hibernate.annotations.common.reflection.XClass;
 import org.hibernate.annotations.common.reflection.XMember;
 import org.hibernate.annotations.common.reflection.XProperty;
-import org.hibernate.search.util.StringHelper;
-import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.analyzer.Discriminator;
 import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.AnalyzerDef;
@@ -67,6 +59,7 @@ import org.hibernate.search.annotations.Longitude;
 import org.hibernate.search.annotations.Norms;
 import org.hibernate.search.annotations.NumericField;
 import org.hibernate.search.annotations.NumericFields;
+import org.hibernate.search.annotations.ProvidedId;
 import org.hibernate.search.annotations.Spatial;
 import org.hibernate.search.annotations.Spatials;
 import org.hibernate.search.annotations.Store;
@@ -77,16 +70,23 @@ import org.hibernate.search.bridge.TwoWayFieldBridge;
 import org.hibernate.search.bridge.builtin.impl.DefaultStringBridge;
 import org.hibernate.search.bridge.builtin.impl.NullEncodingFieldBridge;
 import org.hibernate.search.bridge.builtin.impl.NullEncodingTwoWayFieldBridge;
+import org.hibernate.search.bridge.builtin.impl.TwoWayString2FieldBridgeAdaptor;
 import org.hibernate.search.bridge.impl.BridgeFactory;
 import org.hibernate.search.engine.BoostStrategy;
 import org.hibernate.search.engine.impl.AnnotationProcessingHelper;
 import org.hibernate.search.engine.impl.DefaultBoostStrategy;
+import org.hibernate.search.engine.service.classloading.spi.ClassLoadingException;
+import org.hibernate.search.exception.AssertionFailure;
+import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.impl.ConfigContext;
 import org.hibernate.search.spatial.Coordinates;
+import org.hibernate.search.util.StringHelper;
 import org.hibernate.search.util.impl.ClassLoaderHelper;
 import org.hibernate.search.util.impl.ReflectionHelper;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
+
+import static org.hibernate.search.engine.impl.AnnotationProcessingHelper.getFieldName;
 
 /**
  * A metadata provider which extracts the required information from annotations.
@@ -192,40 +192,40 @@ public class AnnotationMetadataProvider implements MetadataProvider {
 						.build();
 				typeMetadataBuilder.idProperty( idPropertyMetadata );
 			}
-			else {
-				//component should index their document id
-				String fieldName = prefix + attributeName;
-				Field.Index index = AnnotationProcessingHelper.getIndex( Index.YES, Analyze.NO, Norms.YES );
-				Field.TermVector termVector = AnnotationProcessingHelper.getTermVector( TermVector.NO );
-				FieldBridge fieldBridge = bridgeFactory.guessType( null, null, member, reflectionManager, configContext.getServiceManager() );
-
-				DocumentFieldMetadata fieldMetadata =
-						new DocumentFieldMetadata.Builder( fieldName, Store.YES, index, termVector )
-								.boost( AnnotationProcessingHelper.getBoost( member, null ) )
-								.fieldBridge( fieldBridge )
-								.idInEmbedded()
-								.build();
-
-				PropertyMetadata propertyMetadata = new PropertyMetadata.Builder( member )
-						.addDocumentField( fieldMetadata )
-						.dynamicBoostStrategy( AnnotationProcessingHelper.getDynamicBoost( member ) )
-						.build();
-
-				typeMetadataBuilder.addProperty( propertyMetadata );
-
-				// property > entity analyzer (no field analyzer)
-				Analyzer analyzer = AnnotationProcessingHelper.getAnalyzer(
-						member.getAnnotation( org.hibernate.search.annotations.Analyzer.class ),
-						configContext
-				);
-				if ( analyzer == null ) {
-					analyzer = typeMetadataBuilder.getAnalyzer();
-				}
-				if ( analyzer == null ) {
-					throw new AssertionFailure( "Analyzer should not be undefined" );
-				}
-				typeMetadataBuilder.addToScopedAnalyzer( fieldName, analyzer, index );
-			}
+//			else {
+//				//component should index their document id
+//				String fieldName = prefix + attributeName;
+//				Field.Index index = AnnotationProcessingHelper.getIndex( Index.YES, Analyze.NO, Norms.YES );
+//				Field.TermVector termVector = AnnotationProcessingHelper.getTermVector( TermVector.NO );
+//				FieldBridge fieldBridge = bridgeFactory.guessType( null, null, member, reflectionManager, configContext.getServiceManager() );
+//
+//				DocumentFieldMetadata fieldMetadata =
+//						new DocumentFieldMetadata.Builder( fieldName, Store.YES, index, termVector )
+//								.boost( AnnotationProcessingHelper.getBoost( member, null ) )
+//								.fieldBridge( fieldBridge )
+//								.idInEmbedded()
+//								.build();
+//
+//				PropertyMetadata propertyMetadata = new PropertyMetadata.Builder( member )
+//						.addDocumentField( fieldMetadata )
+//						.dynamicBoostStrategy( AnnotationProcessingHelper.getDynamicBoost( member ) )
+//						.build();
+//
+//				typeMetadataBuilder.addProperty( propertyMetadata );
+//
+//				// property > entity analyzer (no field analyzer)
+//				Analyzer analyzer = AnnotationProcessingHelper.getAnalyzer(
+//						member.getAnnotation( org.hibernate.search.annotations.Analyzer.class ),
+//						configContext
+//				);
+//				if ( analyzer == null ) {
+//					analyzer = typeMetadataBuilder.getAnalyzer();
+//				}
+//				if ( analyzer == null ) {
+//					throw new AssertionFailure( "Analyzer should not be undefined" );
+//				}
+//				typeMetadataBuilder.addToScopedAnalyzer( fieldName, analyzer, index );
+//			}
 		}
 	}
 
