@@ -441,8 +441,8 @@ public class ScrollableResultsImpl implements ScrollableResults {
 
 	private final class LoadedObject {
 
-		private Reference<Object[]> entity; //never==null but Reference.get can return null
-		private Reference<EntityInfo> einfo; //never==null but Reference.get can return null
+		private Reference<Object[]> entityReference; // never==null but Reference.get can return null
+		private Reference<EntityInfo> entityInfoReference; // never==null but Reference.get can return null
 
 		/**
 		 * Gets the objects from cache if it is available and attached to session,
@@ -452,7 +452,7 @@ public class ScrollableResultsImpl implements ScrollableResults {
 		 */
 		private Object[] getManagedResult(int x) {
 			EntityInfo entityInfo = getEntityInfo( x );
-			Object[] objects = entity == null ? null : entity.get();
+			Object[] objects = entityReference == null ? null : entityReference.get();
 			if ( objects != null && areAllEntitiesManaged( objects, entityInfo ) ) {
 				return objects;
 			}
@@ -462,7 +462,7 @@ public class ScrollableResultsImpl implements ScrollableResults {
 					loaded = new Object[] { loaded };
 				}
 				objects = (Object[]) loaded;
-				this.entity = new SoftReference<Object[]>( objects );
+				this.entityReference = new SoftReference<Object[]>( objects );
 				return objects;
 			}
 		}
@@ -473,7 +473,7 @@ public class ScrollableResultsImpl implements ScrollableResults {
 		 * @return
 		 */
 		private EntityInfo getEntityInfo(int x) {
-			EntityInfo entityInfo = einfo == null ? null : einfo.get();
+			EntityInfo entityInfo = entityInfoReference == null ? null : entityInfoReference.get();
 			if ( entityInfo == null ) {
 				try {
 					entityInfo = documentExtractor.extract( x );
@@ -481,21 +481,20 @@ public class ScrollableResultsImpl implements ScrollableResults {
 				catch (IOException e) {
 					throw new SearchException( "Unable to read Lucene topDocs[" + x + "]", e );
 				}
-				einfo = new SoftReference<EntityInfo>( entityInfo );
+				entityInfoReference = new SoftReference<EntityInfo>( entityInfo );
 			}
 			return entityInfo;
 		}
-
 	}
 
 	private boolean areAllEntitiesManaged(Object[] objects,	EntityInfo entityInfo) {
 		//check if all entities are session-managed and skip the check on projected values
 		org.hibernate.Session hibSession = (org.hibernate.Session) session;
-		if ( entityInfo.getProjection() != null ) {
+		if ( entityInfo.hasProjections() ) {
 			// using projection: test only for entities
-			for ( int idx : entityInfo.getIndexesOfThis() ) {
+			for ( int idx : entityInfo.getProjectionInfo().getIndexesOfThisProjection() ) {
 				Object o = objects[idx];
-				//TODO improve: is it useful to check for proxies and have them reassociated to persistence context?
+				//TODO improve: is it useful to check for proxies and have them re-associated to persistence context?
 				if ( ! hibSession.contains( o ) ) {
 					return false;
 				}

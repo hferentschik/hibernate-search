@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.hibernate.search.query.engine.spi.EntityInfo;
+import org.hibernate.search.query.engine.spi.ProjectionInfo;
 
 /**
  * Wrapper class describing the loading of an element.
@@ -34,12 +35,19 @@ public class EntityInfoImpl implements EntityInfo {
 	 */
 	private final String idName;
 
-	/**
-	 * Array of projected values. {@code null} in case there are no projections.
-	 */
-	private final Object[] projection;
+	private final ProjectionInfo projectionInfo;
 
-	private final List<Integer> indexesOfThis = new LinkedList<Integer>();
+	public EntityInfoImpl(Class clazz, String idName, Serializable id, Object[] projection) {
+		this.clazz = clazz;
+		this.idName = idName;
+		this.id = id;
+		if ( projection == null ) {
+			this.projectionInfo = null;
+		}
+		else {
+			this.projectionInfo = new ProjectionInfoImpl( projection );
+		}
+	}
 
 	@Override
 	public Class<?> getClazz() {
@@ -47,46 +55,72 @@ public class EntityInfoImpl implements EntityInfo {
 	}
 
 	@Override
-	public Serializable getId() {
+	public Serializable getEntityId() {
 		return id;
 	}
 
 	@Override
-	public String getIdName() {
+	public String getEntityIdName() {
 		return idName;
 	}
 
 	@Override
-	public Object[] getProjection() {
-		return projection;
+	public Serializable getDocumentId() {
+		return null;
 	}
 
 	@Override
-	public List<Integer> getIndexesOfThis() {
-		return indexesOfThis;
+	public String getDocumentIdName() {
+		return null;
 	}
 
 	@Override
-	public boolean isProjectThis() {
-		return indexesOfThis.size() != 0;
+	public ProjectionInfo getProjectionInfo() {
+		return projectionInfo;
 	}
 
 	@Override
-	public void populateWithEntityInstance(Object entity) {
-		for ( int index : indexesOfThis ) {
-			projection[index] = entity;
+	public boolean hasProjections() {
+		return projectionInfo != null;
+	}
+
+	public static class ProjectionInfoImpl implements ProjectionInfo {
+		/**
+		 * Array of projected values. {@code null} in case there are no projections.
+		 */
+		private final Object[] projection;
+
+		private final List<Integer> indexesOfThis = new LinkedList<Integer>();
+
+		public ProjectionInfoImpl(Object[] projection) {
+			if ( projection != null ) {
+				this.projection = projection.clone();
+			}
+			else {
+				this.projection = null;
+			}
 		}
-	}
 
-	public EntityInfoImpl(Class clazz, String idName, Serializable id, Object[] projection) {
-		this.clazz = clazz;
-		this.idName = idName;
-		this.id = id;
-		if ( projection != null ) {
-			this.projection = projection.clone();
+		@Override
+		public Object[] getProjectedValues() {
+			return projection;
 		}
-		else {
-			this.projection = null;
+
+		@Override
+		public List<Integer> getIndexesOfThisProjection() {
+			return indexesOfThis;
+		}
+
+		@Override
+		public boolean isThisProjected() {
+			return indexesOfThis.size() != 0;
+		}
+
+		@Override
+		public void populateWithEntityInstance(Object entity) {
+			for ( int index : indexesOfThis ) {
+				projection[index] = entity;
+			}
 		}
 	}
 }

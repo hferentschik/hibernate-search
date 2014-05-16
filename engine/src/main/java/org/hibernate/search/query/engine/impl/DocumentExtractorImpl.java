@@ -17,17 +17,16 @@ import java.util.Set;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TopDocs;
-import org.hibernate.search.engine.ProjectionConstants;
 import org.hibernate.search.bridge.spi.ConversionContext;
 import org.hibernate.search.bridge.util.impl.ContextualExceptionBridgeHelper;
+import org.hibernate.search.engine.ProjectionConstants;
 import org.hibernate.search.engine.impl.DocumentBuilderHelper;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
+import org.hibernate.search.query.collector.impl.FieldCacheCollector;
 import org.hibernate.search.query.engine.spi.DocumentExtractor;
 import org.hibernate.search.query.engine.spi.EntityInfo;
-import org.hibernate.search.query.collector.impl.FieldCacheCollector;
-
-import org.hibernate.search.util.logging.impl.LoggerFactory;
 import org.hibernate.search.util.logging.impl.Log;
+import org.hibernate.search.util.logging.impl.LoggerFactory;
 
 
 /**
@@ -222,38 +221,41 @@ public class DocumentExtractorImpl implements DocumentExtractor {
 		Document document = extractDocument( scoreDocIndex );
 
 		EntityInfo entityInfo = extractEntityInfo( docId, document, scoreDocIndex, exceptionWrap );
-		Object[] eip = entityInfo.getProjection();
 
-		if ( eip != null && eip.length > 0 ) {
-			for ( int x = 0; x < projection.length; x++ ) {
+		if ( !entityInfo.hasProjections() ) {
+			return entityInfo;
+		}
+
+		// add "meta" projections
+		Object[] projectedValues = entityInfo.getProjectionInfo().getProjectedValues();
+		for ( int x = 0; x < projection.length; x++ ) {
 				if ( ProjectionConstants.SCORE.equals( projection[x] ) ) {
-					eip[x] = queryHits.score( scoreDocIndex );
+					projectedValues[x] = queryHits.score( scoreDocIndex );
 				}
 				else if ( ProjectionConstants.ID.equals( projection[x] ) ) {
-					eip[x] = entityInfo.getId();
+					projectedValues[x] = entityInfo.getEntityId();
 				}
 				else if ( ProjectionConstants.DOCUMENT.equals( projection[x] ) ) {
-					eip[x] = document;
+					projectedValues[x] = document;
 				}
 				else if ( ProjectionConstants.DOCUMENT_ID.equals( projection[x] ) ) {
-					eip[x] = docId;
+					projectedValues[x] = docId;
 				}
 				else if ( ProjectionConstants.EXPLANATION.equals( projection[x] ) ) {
-					eip[x] = queryHits.explain( scoreDocIndex );
+					projectedValues[x] = queryHits.explain( scoreDocIndex );
 				}
 				else if ( ProjectionConstants.OBJECT_CLASS.equals( projection[x] ) ) {
-					eip[x] = entityInfo.getClazz();
+					projectedValues[x] = entityInfo.getClazz();
 				}
 				else if ( ProjectionConstants.SPATIAL_DISTANCE.equals( projection[x] ) ) {
-					eip[x] = queryHits.spatialDistance( scoreDocIndex );
+					projectedValues[x] = queryHits.spatialDistance( scoreDocIndex );
 				}
 				else if ( ProjectionConstants.THIS.equals( projection[x] ) ) {
 					//THIS could be projected more than once
 					//THIS loading delayed to the Loader phase
-					entityInfo.getIndexesOfThis().add( x );
+					entityInfo.getProjectionInfo().getIndexesOfThisProjection().add( x );
 				}
 			}
-		}
 		return entityInfo;
 	}
 

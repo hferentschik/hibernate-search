@@ -179,7 +179,8 @@ public class MoreLikeThisBuilder<T> {
 				return null;
 			}
 		}
-		return (Integer) entityInfos.iterator().next().getProjection()[0];
+		EntityInfo entityInfo = entityInfos.iterator().next();
+		return (Integer) entityInfo.getProjectionInfo().getProjectedValues()[0];
 	}
 
 	private Query maybeExcludeComparedEntity(Query query) {
@@ -462,7 +463,7 @@ public class MoreLikeThisBuilder<T> {
 	 *
 	 * @param r a source of text to be tokenized
 	 * @param termFreqMap a Map of terms and their frequencies
-	 * @param fieldName Used by analyzer for any special per-field analysis
+	 * @param fieldContext Used by analyzer for any special per-field analysis
 	 */
 	private void addTermFrequencies(Reader r, Map<String, Int> termFreqMap, FieldContext fieldContext)
 			throws IOException {

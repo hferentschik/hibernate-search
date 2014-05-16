@@ -41,7 +41,7 @@ public final class ObjectLoaderHelper {
 			if ( LoaderHelper.isObjectNotFoundException( e ) ) {
 				log.debugf(
 						"Object found in Search index but not in database: %s with id %s",
-						entityInfo.getClazz(), entityInfo.getId()
+						entityInfo.getClazz(), entityInfo.getEntityId()
 				);
 				session.evict( maybeProxy );
 				maybeProxy = null;
@@ -69,7 +69,7 @@ public final class ObjectLoaderHelper {
 				if ( log.isDebugEnabled() ) {
 					log.debugf(
 							"Object found in Search index but not in database: %s with %s",
-							entityInfo.getClazz(), entityInfo.getId()
+							entityInfo.getClazz(), entityInfo.getEntityId()
 					);
 				}
 			}
@@ -81,11 +81,11 @@ public final class ObjectLoaderHelper {
 		Object maybeProxy;
 		if ( areDocIdAndEntityIdIdentical( entityInfo, session ) ) {
 			//be sure to get an initialized object but save from ONFE and ENFE
-			maybeProxy = session.load( entityInfo.getClazz(), entityInfo.getId() );
+			maybeProxy = session.load( entityInfo.getClazz(), entityInfo.getEntityId() );
 		}
 		else {
 			Criteria criteria = session.createCriteria( entityInfo.getClazz() );
-			criteria.add( Restrictions.eq( entityInfo.getIdName(), entityInfo.getId() ) );
+			criteria.add( Restrictions.eq( entityInfo.getEntityIdName(), entityInfo.getEntityId() ) );
 			try {
 				maybeProxy = criteria.uniqueResult();
 			}
@@ -94,9 +94,9 @@ public final class ObjectLoaderHelper {
 				//FIXME this happens when the index is out of sync with the db)
 				throw new SearchException(
 						"Loading entity of type " + entityInfo.getClazz().getName() + " using '"
-								+ entityInfo.getIdName()
+								+ entityInfo.getEntityIdName()
 								+ "' as document id and '"
-								+ entityInfo.getId()
+								+ entityInfo.getEntityId()
 								+ "' as value was not unique"
 				);
 			}
@@ -109,6 +109,6 @@ public final class ObjectLoaderHelper {
 		String hibernateIdentifierProperty = session.getSessionFactory()
 				.getClassMetadata( entityInfo.getClazz() )
 				.getIdentifierPropertyName();
-		return entityInfo.getIdName().equals( hibernateIdentifierProperty );
+		return entityInfo.getEntityIdName().equals( hibernateIdentifierProperty );
 	}
 }

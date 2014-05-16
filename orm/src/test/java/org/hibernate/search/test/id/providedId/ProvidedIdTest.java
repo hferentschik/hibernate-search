@@ -123,8 +123,8 @@ public class ProvidedIdTest {
 		);
 		HashSet<String> titles = new HashSet<String>( 3 );
 		for ( int id = 0; id < hits.totalHits; id++ ) {
-			Long documentId = (Long) extractor.extract( id ).getId();
-			String projectedTitle = (String) extractor.extract( id ).getProjection()[0];
+			Long documentId = (Long) extractor.extract( id ).getEntityId();
+			String projectedTitle = (String) extractor.extract( id ).getProjectionInfo().getProjectedValues()[0];
 			assertNotNull( projectedTitle );
 			titles.add( projectedTitle );
 		}

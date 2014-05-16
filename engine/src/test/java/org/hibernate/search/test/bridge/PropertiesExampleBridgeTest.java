@@ -9,8 +9,6 @@ package org.hibernate.search.test.bridge;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Assert;
-
 import org.apache.lucene.search.Query;
 import org.hibernate.search.backend.spi.Work;
 import org.hibernate.search.backend.spi.WorkType;
@@ -19,6 +17,7 @@ import org.hibernate.search.query.dsl.QueryBuilder;
 import org.hibernate.search.query.engine.spi.EntityInfo;
 import org.hibernate.search.testsupport.junit.SearchFactoryHolder;
 import org.hibernate.search.testsupport.setup.TransactionContextForTest;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -43,7 +42,7 @@ public class PropertiesExampleBridgeTest {
 				.property( "surname", "Oakenshield" )
 				.property( "race", "dwarf" );
 
-			Work work = new Work( holder, holder.id, WorkType.ADD, false );
+			Work<DynamicIndexedValueHolder> work = new Work<DynamicIndexedValueHolder>( holder, holder.id, WorkType.ADD, false );
 			TransactionContextForTest tc = new TransactionContextForTest();
 			searchFactory.getWorker().performWork( work, tc );
 			tc.end();
@@ -60,8 +59,7 @@ public class PropertiesExampleBridgeTest {
 
 		Assert.assertEquals( 1, queryEntityInfos.size() );
 		EntityInfo entityInfo = queryEntityInfos.get( 0 );
-		Assert.assertEquals( "Oakenshield", entityInfo.getProjection()[0] );
-
+		Assert.assertTrue( entityInfo.hasProjections() );
+		Assert.assertEquals( "Oakenshield", entityInfo.getProjectionInfo().getProjectedValues()[0] );
 	}
-
 }

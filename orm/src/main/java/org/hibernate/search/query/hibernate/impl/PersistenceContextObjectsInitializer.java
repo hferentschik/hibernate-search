@@ -57,7 +57,7 @@ public class PersistenceContextObjectsInitializer implements ObjectsInitializer 
 		List<EntityInfo> remainingEntityInfos = new ArrayList<EntityInfo>( maxResults );
 		for ( EntityInfo entityInfo : entityInfos ) {
 			if ( ObjectLoaderHelper.areDocIdAndEntityIdIdentical( entityInfo, session ) ) {
-				EntityKey entityKey = sessionImplementor.generateEntityKey( entityInfo.getId(), persister );
+				EntityKey entityKey = sessionImplementor.generateEntityKey( entityInfo.getEntityId(), persister );
 				final boolean isInitialized = persistenceContext.containsEntity( entityKey );
 				if ( !isInitialized ) {
 					remainingEntityInfos.add( entityInfo );

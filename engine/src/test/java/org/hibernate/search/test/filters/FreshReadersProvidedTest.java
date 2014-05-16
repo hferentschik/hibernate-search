@@ -83,7 +83,7 @@ public class FreshReadersProvidedTest {
 			.queryEntityInfos();
 
 		Assert.assertEquals( 1, queryEntityInfos.size() );
-		Assert.assertEquals( 13L, queryEntityInfos.get( 0 ).getId() );
+		Assert.assertEquals( 13L, queryEntityInfos.get( 0 ).getEntityId() );
 
 		RecordingFilter filter = new RecordingFilter( "name" );
 		List<EntityInfo> filteredQueryEntityInfos = searchFactory.createHSQuery()
@@ -95,7 +95,7 @@ public class FreshReadersProvidedTest {
 		checkFilterInspectedAllSegments( filter );
 		expectedTermsForFilter( filter, "thorin", "oakenshield" );
 		Assert.assertEquals( 1, filteredQueryEntityInfos.size() );
-		Assert.assertEquals( 13L, filteredQueryEntityInfos.get( 0 ).getId() );
+		Assert.assertEquals( 13L, filteredQueryEntityInfos.get( 0 ).getEntityId() );
 
 		{ // Store guest "Balin"
 			Guest balin = new Guest();
@@ -114,8 +114,8 @@ public class FreshReadersProvidedTest {
 			.queryEntityInfos();
 
 		Assert.assertEquals( 2, queryEntityInfosAgain.size() );
-		Assert.assertEquals( 13L, queryEntityInfosAgain.get( 0 ).getId() );
-		Assert.assertEquals( 7L, queryEntityInfosAgain.get( 1 ).getId() );
+		Assert.assertEquals( 13L, queryEntityInfosAgain.get( 0 ).getEntityId() );
+		Assert.assertEquals( 7L, queryEntityInfosAgain.get( 1 ).getEntityId() );
 
 		RecordingFilter secondFilter = new RecordingFilter( "name" );
 		List<EntityInfo> secondFilteredQueryEntityInfos = searchFactory.createHSQuery()
@@ -128,8 +128,8 @@ public class FreshReadersProvidedTest {
 		expectedTermsForFilter( secondFilter, "thorin", "oakenshield", "balin" );
 
 		Assert.assertEquals( 2, secondFilteredQueryEntityInfos.size() );
-		Assert.assertEquals( 13L, secondFilteredQueryEntityInfos.get( 0 ).getId() );
-		Assert.assertEquals( 7L, secondFilteredQueryEntityInfos.get( 1 ).getId() );
+		Assert.assertEquals( 13L, secondFilteredQueryEntityInfos.get( 0 ).getEntityId() );
+		Assert.assertEquals( 7L, secondFilteredQueryEntityInfos.get( 1 ).getEntityId() );
 	}
 
 	private void expectedTermsForFilter(RecordingFilter filter, String... term) {
