@@ -14,6 +14,7 @@ import org.hibernate.search.cfg.Environment;
 import org.hibernate.search.backend.impl.blackhole.BlackHoleBackendQueueProcessor;
 import org.hibernate.search.backend.impl.lucene.LuceneBackendQueueProcessor;
 import org.hibernate.search.backend.spi.BackendQueueProcessor;
+import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.util.impl.Executors;
 import org.hibernate.search.engine.service.spi.ServiceManager;
 import org.hibernate.search.indexes.impl.DirectoryBasedIndexManager;
@@ -53,7 +54,7 @@ public final class BackendFactory {
 	}
 
 	public static BackendQueueProcessor createBackend(String backend,
-			DirectoryBasedIndexManager indexManager,
+			IndexManager indexManager,
 			WorkerBuildContext buildContext,
 			Properties properties) {
 		final BackendQueueProcessor backendQueueProcessor;

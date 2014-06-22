@@ -22,7 +22,6 @@ import org.hibernate.search.backend.IndexingMonitor;
 import org.hibernate.search.backend.LuceneWork;
 import org.hibernate.search.backend.spi.BackendQueueProcessor;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
-import org.hibernate.search.indexes.impl.DirectoryBasedIndexManager;
 import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.spi.WorkerBuildContext;
 import org.hibernate.search.util.logging.impl.Log;
@@ -52,7 +51,7 @@ public abstract class JmsBackendQueueProcessor implements BackendQueueProcessor 
 	private static final Log log = LoggerFactory.make();
 
 	@Override
-	public void initialize(Properties props, WorkerBuildContext context, DirectoryBasedIndexManager indexManager) {
+	public void initialize(Properties props, WorkerBuildContext context, IndexManager indexManager) {
 		this.indexManager = indexManager;
 		this.jmsQueueName = props.getProperty( JMS_QUEUE );
 		this.indexName = indexManager.getIndexName();

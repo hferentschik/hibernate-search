@@ -6,13 +6,13 @@
  */
 package org.hibernate.search.backend.impl.lucene;
 
+import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.util.impl.Executors;
 import org.hibernate.search.indexes.impl.PropertiesParseHelper;
 import org.hibernate.search.spi.WorkerBuildContext;
 import org.hibernate.search.backend.BackendFactory;
 import org.hibernate.search.backend.impl.lucene.works.LuceneWorkVisitor;
 import org.hibernate.search.exception.ErrorHandler;
-import org.hibernate.search.indexes.impl.DirectoryBasedIndexManager;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
 import org.hibernate.search.util.logging.impl.Log;
 
@@ -45,7 +45,7 @@ public final class LuceneBackendResources {
 	private final ReadLock readLock;
 	private final WriteLock writeLock;
 
-	LuceneBackendResources(WorkerBuildContext context, DirectoryBasedIndexManager indexManager, Properties props, AbstractWorkspaceImpl workspace) {
+	LuceneBackendResources(WorkerBuildContext context, IndexManager indexManager, Properties props, AbstractWorkspaceImpl workspace) {
 		this.indexName = indexManager.getIndexName();
 		this.errorHandler = context.getErrorHandler();
 		this.workspace = workspace;

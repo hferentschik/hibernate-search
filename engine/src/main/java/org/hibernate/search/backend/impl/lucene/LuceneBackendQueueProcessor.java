@@ -12,12 +12,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 
-import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.backend.BackendFactory;
 import org.hibernate.search.backend.IndexingMonitor;
 import org.hibernate.search.backend.LuceneWork;
 import org.hibernate.search.backend.spi.BackendQueueProcessor;
+import org.hibernate.search.exception.AssertionFailure;
+import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.indexes.impl.DirectoryBasedIndexManager;
+import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.spi.WorkerBuildContext;
 import org.hibernate.search.util.logging.impl.Log;
 import org.hibernate.search.util.logging.impl.LoggerFactory;
@@ -42,11 +44,14 @@ public class LuceneBackendQueueProcessor implements BackendQueueProcessor {
 	private LuceneBackendTaskStreamer streamWorker;
 
 	@Override
-	public void initialize(Properties props, WorkerBuildContext context, DirectoryBasedIndexManager indexManager) {
+	public void initialize(Properties props, WorkerBuildContext context, IndexManager indexManager) {
+		if ( !( indexManager instanceof DirectoryBasedIndexManager ) ) {
+			throw new AssertionFailure( "Expected a DirectoryBasedIndexManager" );
+		}
 		sync = BackendFactory.isConfiguredAsSync( props );
 		if ( workspaceOverride == null ) {
 			workspaceOverride = WorkspaceFactory.createWorkspace(
-					indexManager, context, props
+					(DirectoryBasedIndexManager) indexManager, context, props
 			);
 		}
 		resources = new LuceneBackendResources( context, indexManager, props, workspaceOverride );
@@ -104,7 +109,7 @@ public class LuceneBackendQueueProcessor implements BackendQueueProcessor {
 	}
 
 	/**
-	 * If invoked before {@link #initialize(Properties, WorkerBuildContext, DirectoryBasedIndexManager)}
+	 * If invoked before {@link #initialize(Properties, WorkerBuildContext, IndexManager)}
 	 * it can set a customized Workspace instance to be used by this backend.
 	 *
 	 * @param workspace the new workspace
