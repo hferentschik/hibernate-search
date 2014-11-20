@@ -45,6 +45,7 @@ public class BytemanHelper extends Helper {
 		if ( actual != expected ) {
 			fail( "Unexpected boolean value" );
 		}
+		countInvocation();
 	}
 
 	public void countInvocation() {
