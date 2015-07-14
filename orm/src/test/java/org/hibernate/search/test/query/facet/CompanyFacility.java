@@ -26,6 +26,14 @@ public class CompanyFacility {
 	@Facet
 	private String country;
 
+	@Field(analyze = Analyze.NO)
+	@Facet
+	private long employees;
+
+	@Field(analyze = Analyze.NO)
+	@Facet
+	private double score;
+
 	@ManyToOne
 	@ContainedIn
 	private Company company;
@@ -33,10 +41,12 @@ public class CompanyFacility {
 	public CompanyFacility() {
 	}
 
-	public CompanyFacility(String country) {
+	public CompanyFacility(String country, long employees, double score) {
 		this.country = country;
-
+		this.employees = employees;
+		this.score = score;
 	}
+
 	public int getId() {
 		return id;
 	}
@@ -57,11 +67,30 @@ public class CompanyFacility {
 		this.country = country;
 	}
 
+	public long getEmployees() {
+		return employees;
+	}
+
+	public void setEmployees(long employees) {
+		this.employees = employees;
+	}
+
+	public double getScore() {
+		return score;
+	}
+
+	public void setScore(double score) {
+		this.score = score;
+	}
+
 	@Override
 	public String toString() {
 		return "CompanyFacility{" +
 				"id=" + id +
 				", country='" + country + '\'' +
+				", employees=" + employees +
+				", score=" + score +
+				", company=" + company +
 				'}';
 	}
 }

@@ -24,6 +24,7 @@ import org.apache.lucene.document.DoubleDocValuesField;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.NumericDocValuesField;
+import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
 import org.apache.lucene.index.FieldInfo.IndexOptions;
@@ -616,7 +617,7 @@ public class DocumentBuilderIndexedEntity extends AbstractDocumentBuilder {
 			}
 			case LONG: {
 				if ( value instanceof Number ) {
-					facetField = new NumericDocValuesField(
+					facetField = new SortedNumericDocValuesField(
 							facetMetadata.getFacetName(),
 							( (Number) value ).longValue()
 					);
@@ -651,9 +652,9 @@ public class DocumentBuilderIndexedEntity extends AbstractDocumentBuilder {
 			}
 			case DOUBLE: {
 				if ( value instanceof Number ) {
-					facetField = new DoubleDocValuesField(
+					facetField = new SortedNumericDocValuesField(
 							facetMetadata.getFacetName(),
-							( (Number) value ).doubleValue()
+							Double.doubleToRawLongBits( ( (Number) value ).doubleValue())
 					);
 				}
 				else {
